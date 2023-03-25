@@ -1,0 +1,7 @@
+**/.vscode
+**/*~
+**/*.o
+**/*.sch-bak
+**/*.pcb-bak
+test/EEPROM.DAT
+test/RunTest
