@@ -60,10 +60,18 @@ PPMInspect - Der Source Code
 
 ## Und Sonst...
 
-Wird anstelle eines SH1106 ein SSD1306 Display Controller verwendet muss in TextUILcdSSd1306.cpp Zeile 34 von:
+### Wird anstelle eines SH1106 ein SSD1306 Display Controller verwendet muss in TextUILcdSSd1306.cpp Zeile 34 von:
 
-lcd.begin(&SH1106_128x64, DISPLAY_I2C_ADDRESS);
-
-geändert werden in:
-
+lcd.begin(&SH1106_128x64, DISPLAY_I2C_ADDRESS); \
+geändert werden in: \
 lcd.begin(&Adafruit128x64, DISPLAY_I2C_ADDRESS);
+
+### Genauigkeit PPM Scan
+
+- Servotiming pro Kanal: +/- 1 Microsekunde
+- Puls: +/- 1 Microsekunde
+- Frame: +/- 1 Microsekunde * Anzahl Kanäle (Weil Frame Zeit durch Aufsummieren der Kanäle berechet wird)
+
+## TODO
+
+- Frame Genauigkeit verbessern

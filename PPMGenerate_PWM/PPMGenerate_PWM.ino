@@ -97,7 +97,12 @@ ISR(TIMER3_OVF_vect) {
     inFrameTime += nextTimerValue;
     outputChannel++;
   }
- 
+
+  /* We nedd to count 1498..1499..0..1
+   * not 1498..1499..1500..0..1
+   * Subtract -2 because of 0.5 usec timer resolution.
+   */
+  nextTimerValue -= 2;
   ICR3H = H(nextTimerValue);
   ICR3L = L(nextTimerValue);
 }
@@ -149,9 +154,12 @@ void initPPM() {
     ICR3H = H((PPM_SPACE_usec + PPM_INIT_usec) << 1);
     ICR3L = L((PPM_SPACE_usec + PPM_INIT_usec) << 1);
 
-    /* Set compare to end of pulse */
-    OCR3AH = H(PPM_SPACE_usec << 1);
-    OCR3AL = L(PPM_SPACE_usec << 1);
+    /* Set compare to end of pulse
+     *  
+     * Subtract 2 because output is set to the next falling edge after compare.     * 
+     */
+    OCR3AH = H((PPM_SPACE_usec << 1) -2);
+    OCR3AL = L((PPM_SPACE_usec << 1) -2);
     
     /* TOIE3: Timer overflow interrupt */
     TIMSK3 = bit(TOIE3);
