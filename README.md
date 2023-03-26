@@ -26,6 +26,11 @@ Zur [Bedienungsanleitung](MANUAL.md)
 - 1 Elko 100uF 16V
 - Stecker nach Wahl (Gebogene Pfostenleiste)
 
+## Verwendete Libraries
+
+Folgende Libraries werden benötigt und über die Arduino IDE installiert:
+
+- SSD1306Ascii
 
 ## Arduino Nano Ports
 
@@ -53,3 +58,12 @@ PPMGenerate_ISR - PPM Test Generator über Interrupts
 PPMGenerate_PWM - PPM Test Generator über Hardware-PWM  
 PPMInspect - Der Source Code  
 
+## Und Sonst...
+
+Wird anstelle eines SH1106 ein SSD1306 Display Controller verwendet muss in TextUILcdSSd1306.cpp Zeile 34 von:
+
+lcd.begin(&SH1106_128x64, DISPLAY_I2C_ADDRESS);
+
+geändert werden in:
+
+lcd.begin(&Adafruit128x64, DISPLAY_I2C_ADDRESS);
