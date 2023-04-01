@@ -28,13 +28,34 @@
 
 VMeterScreen::VMeterScreen(PPM &ppm) : ppmH(ppm)
 {
+    reset();
     update();
+}
+
+void VMeterScreen::reset()
+{
+  voltage = voltageMax = 0;
+  voltageMin = 999;
+  hasNewData = true;
 }
 
 void VMeterScreen::update()
 {
-    voltage = ppmH.readADC();
-    hasNewData = true;
+    fixfloat1_t v;
+    
+    v = ppmH.readADC();
+    
+    if( v != voltage) {
+      voltage = v;
+      hasNewData = true;
+
+      if( v < voltageMin) {
+        voltageMin = v;
+      }
+      if( voltage > voltageMax) {
+        voltageMax = v;
+      }
+    }
 }
 
 /* TextUI */
@@ -44,8 +65,6 @@ void VMeterScreen::activate(TextUI *ui)
     /* Set large font size and center output*/
     ui->getDisplay()->setFontSize(TEXTUI_FONT_LARGE);
     xpos = ui->getDisplay()->getColumns() / 2 - 2;
-
-    ppmH.initADC();
 }
 
 void VMeterScreen::deactivate(TextUI *ui)
@@ -55,10 +74,33 @@ void VMeterScreen::deactivate(TextUI *ui)
 
 void VMeterScreen::handleEvent(TextUI *ui, Event *e)
 {
-    if (e->getType() == EVENT_TYPE_TIMER)
+    if (e->getType() == EVENT_TYPE_KEY)
+    {
+        switch (e->getKey())
+        {
+        case KEY_CLEAR:
+        case KEY_ENTER:
+            ui->popScreen();
+            e->markProcessed();
+            break;
+
+        case KEY_RESET:
+            reset();
+            e->markProcessed();
+            break;
+
+        case KEY_DOWN:
+            enableMinMax = !enableMinMax;
+            hasNewData = true;
+            e->markProcessed();
+            break;
+
+        }
+    }
+    if (e->getType() == EVENT_TYPE_TIMER || (enableMinMax && e->getType() == EVENT_TYPE_NONE))
     {
         update();
-    } 
+    }
 }
 
 const char *VMeterScreen::getHeader()
@@ -73,27 +115,12 @@ const char *VMeterScreen::getMenuName()
 
 uint8_t VMeterScreen::getRowCount()
 {
-    return 2;
+    return 3;
 }
 
 const char *VMeterScreen::getRowName(uint8_t row)
 {
     return "";
-}
-
-bool VMeterScreen::isRowExecutable(uint8_t row)
-{
-    return true;
-}
-
-void VMeterScreen::rowExecute(TextUI *ui, uint8_t row)
-{
-    ui->popScreen();
-}
-
-bool VMeterScreen::isRowEditable(uint8_t row)
-{
-    return false;
 }
 
 uint8_t VMeterScreen::getColCount(uint8_t row)
@@ -124,6 +151,26 @@ void VMeterScreen::getValue(uint8_t row, uint8_t col, Cell *cell)
             cell->setLabel(xpos + 5, F("V"), 1);
         }
     }
+    else if (row == 2)
+    {
+        if (col == 0)
+        {
+            if( enableMinMax) {
+                cell->setFloat1( 0, voltageMin, 4, 0, 0);
+            } else {
+                cell->setLabel( 0, F(" "), 4);
+            }
+        }
+        else if (col == 1)
+        {
+            if( enableMinMax) {
+                cell->setFloat1( 6, voltageMax, 4, 0, 0);
+            } else {
+                cell->setLabel( 6, F(" "), 4);
+            }
+        }
+    }
+
 }
 
 void VMeterScreen::setValue(uint8_t row, uint8_t col, Cell *cell)

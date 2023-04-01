@@ -28,8 +28,9 @@
 #define _Config_h_
 
 #include "Arduino.h"
+#include "TextUI.h"
 
-#define PPMINSPECT_VERSION "0.9.13"
+#define PPMINSPECT_VERSION "0.9.14"
 
 #define ENABLE_MEMDEBUG
 
@@ -150,7 +151,9 @@ typedef struct config_t
 
     int8_t   vppmAdjust;
     int8_t   vccAdjust;
-
+    
+    fixfloat1_t lowBattWarn;
+    
     /* */
 
     checksum_t checksum;

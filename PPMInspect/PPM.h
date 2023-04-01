@@ -73,10 +73,8 @@ class PPM {
         void storeFrameTime( ppm_t *wSet, uint16_t frame_usec);
         void storeServoTime( ppm_t *wSet, uint16_t servo_usec);
         
-        void initADC();
-        void startADC( uint8_t adcType);
-        void waitADC();
-        fixfloat1_t analogConvert() const;
+        void startADC( uint8_t convertType);
+        fixfloat1_t analogConvert( uint8_t convertType, uint16_t v) const;
         
         fixfloat1_t readADC();
         fixfloat1_t readVCC();

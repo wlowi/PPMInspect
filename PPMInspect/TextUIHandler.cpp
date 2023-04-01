@@ -83,7 +83,7 @@ void TextUIHandler::process(TextUI *ui, TextUILcd *lcd, Event *event)
 
     uint8_t row; // real table row number, excluding back item
 
-    if (refresh == REFRESH_FULL)
+    if (refresh == REFRESH_FULL || refresh == REFRESH_SCREEN)
     {
         updateScreen(lcd);
     }

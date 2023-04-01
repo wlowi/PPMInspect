@@ -57,7 +57,7 @@ public:
     void activate(TextUI *ui);
     void deactivate(TextUI *ui);
 
-    bool isRowEditable(uint8_t row) { return (row < 7); }
+    bool isRowEditable(uint8_t row) { return (row < 8); }
     bool isColEditable(uint8_t row, uint8_t col) { return (col == 0); }
 
     uint8_t getRowCount();

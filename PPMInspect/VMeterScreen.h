@@ -34,13 +34,26 @@ class VMeterScreen : public TextUIScreen {
 
   private:
     PPM &ppmH;
+    
     fixfloat1_t voltage;
+    fixfloat1_t voltageMin;
+    fixfloat1_t voltageMax;
+    
     bool hasNewData = true;
+    
+    /* Disable display of min/max values.
+     * This also reduces sample frequency to screeen update frequency (500 msec).
+     */
+    bool enableMinMax = true;
+
+    /* Centered x position for voltage value.
+     */
     uint8_t xpos = 0;
 
   public:
     explicit VMeterScreen( PPM &ppm);
 
+    void reset();
     void update();
 
     /* TextUI */
@@ -57,11 +70,6 @@ class VMeterScreen : public TextUIScreen {
     uint8_t getRowCount();
     const char *getRowName( uint8_t row);
 
-    bool isRowExecutable( uint8_t row);
-    void rowExecute(  TextUI *ui, uint8_t row );
-
-    bool isRowEditable( uint8_t row);
-    
     uint8_t getColCount( uint8_t row);
 
     bool hasChanged( uint8_t row, uint8_t col);

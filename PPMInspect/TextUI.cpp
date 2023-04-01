@@ -102,6 +102,9 @@ void TextUI::handle( Event *ev) {
   if( refresh == REFRESH_FULL) {
     handler.set( this, CURRENT_SCREEN);
     refresh = REFRESH_OK;
+  } else if( refresh == REFRESH_SCREEN) {
+    handler.forceRefresh();
+    refresh = REFRESH_OK;
   }
 
   handler.process( this, display, ev);

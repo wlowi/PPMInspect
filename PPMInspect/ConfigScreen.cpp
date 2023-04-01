@@ -28,10 +28,10 @@
 #include "EEPROM.h"
 
 #ifdef ENABLE_MEMDEBUG
-  #define ROW_COUNT 8
+  #define ROW_COUNT 9
 extern size_t memdebug[4];
 #else
-  #define ROW_COUNT 7
+  #define ROW_COUNT 8
 #endif
 
 config_t settings;
@@ -44,6 +44,7 @@ const char *ConfigRowNames[ROW_COUNT] = {
    ,"Sync  min"
    ,"Vppm +/-"
    ,"Vcc  +/-"
+   ,"Low Batt"
 #ifdef ENABLE_MEMDEBUG
    ,"Memfree"
 #endif
@@ -68,6 +69,8 @@ void ConfigScreen::setDefaults() const
 
     settings.vppmAdjust = 0;
     settings.vccAdjust = 0;
+
+    settings.lowBattWarn = 74; // 7.4 Volt
 }
 
 void ConfigScreen::load()
@@ -127,7 +130,7 @@ const char *ConfigScreen::getMenuName()
 
 void ConfigScreen::activate(TextUI *ui)
 {
-    ppmH.initADC();
+
 }
 
 void ConfigScreen::deactivate(TextUI *ui)
@@ -203,8 +206,13 @@ void ConfigScreen::getValue(uint8_t row, uint8_t col, Cell *cell)
         {
             cell->setInt8(10, settings.vccAdjust, 3, -99, 99);
         }
+        else if (row == 7)
+        {
+            cell->setFloat1(15, settings.lowBattWarn, 4, 30, 150);
+        }
+
 #ifdef ENABLE_MEMDEBUG
-        else if (row == 7) // Mem
+        else if (row == 8) // Mem
         {
             cell->setInt16(9, gapSize, 4, 0, 0);
         }
@@ -220,8 +228,13 @@ void ConfigScreen::getValue(uint8_t row, uint8_t col, Cell *cell)
         {
             cell->setFloat1(15, lastVcc, 4, 0, 0);
         }
+        else if (row == 7)
+        {
+            cell->setLabel(20, F("V"), 1);
+        }
+
 #ifdef ENABLE_MEMDEBUG
-        else if (row == 7) // Mem
+        else if (row == 8) // Mem
         {
             cell->setInt16(16, gapFree, 5, 0, 0);
         }
@@ -266,5 +279,9 @@ void ConfigScreen::setValue(uint8_t row, uint8_t col, Cell *cell)
     else if (row == 6)
     {
         settings.vccAdjust = cell->getInt8();
+    }
+    else if (row == 7)
+    {
+        settings.lowBattWarn = cell->getFloat1();
     }
 }

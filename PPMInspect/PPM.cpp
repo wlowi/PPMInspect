@@ -48,33 +48,45 @@ uint8_t detectedChannels;
 uint8_t pulseIdx;
 uint16_t pulse_usec[PPM_MAX_PULSE];
 uint16_t frame_usec;
-uint16_t adcValue;
 uint16_t lastCount;
 
-#define ADC_PPM   0
-#define ADC_VCC   1
-volatile uint8_t adcConvertType = ADC_PPM;
+#define ADC_IDLE  0
+/* ADC started from PPM scan ISR */
+#define ADC_PPM   1
+/* ADC started for Voltmeter */
+#define ADC_VM    2
+/* ADC started for Vcc (Battery) */
+#define ADC_VCC   3
+
+volatile uint8_t adcConvertType = ADC_IDLE;
+volatile uint16_t adcValue;
 
 
 /* 
  * ADC conversion complete interrupt. 
  */
 ISR(ADC_vect) {
-   
+
+    uint16_t v;
+    
     /* MUST read ADCL first */
-    adcValue = ADCL;
-    adcValue |= (ADCH << 8);
+    v = ADCL;
+    v |= (ADCH << 8);
 
     if( adcConvertType == ADC_PPM) {
 
         ppm_t *wSet = ppm.getWriteSet();
-        fixfloat1_t newVcc = ppm.analogConvert();
+        fixfloat1_t newVcc = ppm.analogConvert( ADC_PPM, v);
 
         if( newVcc < 20) {
             wSet->vLevel_low = newVcc;
         } else {
             wSet->vLevel_high = newVcc;
         }
+        
+    } else {
+      
+       adcValue = v;
     }
 }
 
@@ -351,8 +363,6 @@ void PPM::startScan() {
         memset(&ppm[0], 0, 3 * sizeof(ppm_t));
         detectStep = DETECT_STEP_INIT;
 
-        initADC();
-
         pinMode(PORT_PPM_IN, INPUT);
         /* disable pull-up */
         digitalWrite(PORT_PPM_IN, LOW);
@@ -412,9 +422,27 @@ void PPM::switchWriteSet(){
     memcpy(&(ppm[stableSet]), &(ppm[writeSet]), sizeof(ppm_t));
 }
 
-void PPM::initADC() {
+/***************/
 
-   ATOMIC_BLOCK( ATOMIC_RESTORESTATE) {
+void PPM::startADC( uint8_t convertType) {
+
+    uint8_t port;
+
+    /* Skip this conversion if started from PPM Scan and ADC is not idle,
+     * We don't want to block the ISR.
+     */
+    if( convertType == ADC_PPM && adcConvertType != ADC_IDLE) { return; }
+
+    if( convertType == ADC_VCC) {
+        port = PORT_VCC;
+    } else {
+        port = PORT_ANALOG_IN;
+    }
+
+    while( adcConvertType != ADC_IDLE) ;
+    adcConvertType = convertType;
+
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE) {
 
         /* Disable power reduction for ADC */
         PRR &= ~_BV(PRADC);
@@ -425,76 +453,50 @@ void PPM::initADC() {
         /* Prescaler /128   ==>   16MHz / 128 = 125KHz */
         ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0);
         ADCSRB = 0;
-    } 
-}
 
-void PPM::startADC( uint8_t adcType) {
-
-    uint8_t port;
-
-    adcConvertType = adcType;
-    
-    if( adcType == ADC_PPM) {
-        port = PORT_ANALOG_IN;
-    } else {
-        port = PORT_VCC;
-    }
-
-    ATOMIC_BLOCK( ATOMIC_RESTORESTATE) {
-
+        /* Set MUX */
         ADMUX &= ~(_BV(MUX3) | _BV(MUX2) | _BV(MUX1) | _BV(MUX0));
-
         ADMUX |= (port - A0);
 
+        /* Start convertsion */
         ADCSRA |= _BV(ADSC) | _BV(ADIE); 
-    }
-}
-
-void PPM::waitADC() {
-
-    /* Wait for completion */
-    while( ADCSRA & _BV(ADSC)) {
-      cli();
-      set_sleep_mode( SLEEP_MODE_ADC);
-      sleep_enable();
-      sei();
-      sleep_cpu();
-      sleep_disable();
     }
 }
 
 fixfloat1_t PPM::readADC() {
 
-    initADC();
-    startADC( ADC_PPM);
-    waitADC();
+    startADC( ADC_VM);
+    /* Wait for completion */
+    while( ADCSRA & _BV(ADSC)) ;
 
-    return analogConvert();
+    return analogConvert( ADC_VM, adcValue);
 }
 
 fixfloat1_t PPM::readVCC() {
 
-    initADC();
     startADC( ADC_VCC);
-    waitADC();
+    /* Wait for completion */
+    while( ADCSRA & _BV(ADSC)) ;
 
-    return analogConvert();
+    return analogConvert( ADC_VCC, adcValue);
 }
 
-fixfloat1_t PPM::analogConvert() const {
-    long vin = 0;
+fixfloat1_t PPM::analogConvert( uint8_t convertType, uint16_t v) const {
+  
+    long vin = v;
 
-    vin = adcValue;
-
-    if( adcConvertType == ADC_PPM) {
-      vin += settings.vppmAdjust;
-    } else if( adcConvertType == ADC_VCC) {
+    if( convertType == ADC_VCC) {
       vin += settings.vccAdjust;
+    } else {
+      vin += settings.vppmAdjust;
     }
     
     if( vin < 0) vin = 0;
-      
-    return vin * ADC_VOLTAGE * (ADC_VOLTAGE_DIVIDER_R1 + ADC_VOLTAGE_DIVIDER_R2) / ADC_VOLTAGE_DIVIDER_R2 / ADC_VCC_RESOLUTION;
+    
+    vin = vin * ADC_VOLTAGE * (ADC_VOLTAGE_DIVIDER_R1 + ADC_VOLTAGE_DIVIDER_R2) / ADC_VOLTAGE_DIVIDER_R2 / ADC_VCC_RESOLUTION;
+    adcConvertType = ADC_IDLE;
+
+    return (fixfloat1_t)vin;
 }
 
 /*

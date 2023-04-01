@@ -79,6 +79,7 @@ size_t memdebug[4];
 TextUI textUI;
 
 extern PPM ppm;
+extern config_t settings;
 
 DataScreen dataScreen(ppm);
 ScopeScreen scopeScreen(ppm);
@@ -110,9 +111,57 @@ void loop()
 {
     Event *e = textUI.getEvent();
 
-    textUI.handle(e);
+    if( checkBattery(e)) {
+        textUI.handle(e);
+    }
     
 #ifdef ENABLE_MEMDEBUG
     MEMDEBUG_CHECK();
 #endif
+}
+
+/*
+ * Check Battery.
+ * Returns false on battery warning.
+ */
+bool checkBattery(Event *e)
+{
+    fixfloat1_t v;
+    TextUILcd *lcd;
+    static int8_t count = 0; // Counts timer timeouts (500msec)
+
+    if( e->getType() == EVENT_TYPE_TIMER) {
+
+        count++;
+        
+        if( count == 0) {
+            // Switch back to regular display
+            textUI.forceRefresh();
+        
+        } else if( count >= 10) { // 10 Seconds
+            
+            v = ppm.readVCC();
+        
+            if( v < settings.lowBattWarn ) {
+                // Show battery warning
+                lcd = textUI.getDisplay();
+                lcd->clear();
+                lcd->printStr( F("LOW BAT!"));
+                count = -2;
+                return false;
+          
+            } else { // Reset counter
+                count = 0;
+            }
+        
+        } else if( count < 0) {
+            return false;
+        }
+    } else {
+        if( count < 0) {
+          return false;
+        }
+    }
+    
+    return true;
 }
