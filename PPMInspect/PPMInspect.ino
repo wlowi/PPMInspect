@@ -138,7 +138,7 @@ bool checkBattery(Event *e)
             // Switch back to regular display
             textUI.forceRefresh();
         
-        } else if( count >= 10) { // 10 Seconds
+        } else if( count >= 20) { // 10 Seconds
             
             v = ppm.readVCC();
         
