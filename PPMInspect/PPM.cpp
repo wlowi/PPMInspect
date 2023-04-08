@@ -36,18 +36,17 @@ PPM ppm;
 /* Config */
 extern config_t settings;
 
-#define DETECT_STEP_INIT 0
-#define DETECT_STEP_SYNCWAIT 1
-#define DETECT_STEP_CHANNELWAIT 2
-#define DETECT_STEP_VERIFY 3
-#define DETECT_STEP_SYNCED 4
+#define DETECT_STEP_INIT         0
+#define DETECT_STEP_SYNCWAIT     1
+#define DETECT_STEP_CHANNELWAIT  2
+#define DETECT_STEP_VERIFY       3
+#define DETECT_STEP_SYNCED       4
 
 uint8_t detectStep;
 uint8_t channels;
 uint8_t detectedChannels;
 uint8_t pulseIdx;
 uint16_t pulse_usec[PPM_MAX_PULSE];
-uint16_t frame_usec;
 uint16_t lastCount;
 
 #define ADC_IDLE  0
@@ -122,7 +121,7 @@ ISR(TIMER1_CAPT_vect) {
     TIFR1 |= _BV(ICF1);
     
     overFlow = TIFR1 & _BV(TOV1);
-    time_usec = (((uint16_t)h << 8) | l) - lastCount;
+    time_usec = (((uint16_t)h << 8) | l) - lastCount +1;
     lastCount = (((uint16_t)h << 8) | l);
     time_usec >>= 1;  /* Divide by 2 because of 0.5 usec timer resolution */
     
@@ -175,6 +174,12 @@ ISR(TIMER1_CAPT_vect) {
         case DETECT_STEP_VERIFY:
         case DETECT_STEP_SYNCED:
             if( ppm.storeFrame(wSet, time_usec, level)) {
+              
+                /* We don't set the timer back to 0.
+                 * Instead we get the current timer and compute the offset time 
+                 * used by the ISR by subtracting the couter stored in lastCount.
+                 * This is the corrected new timer base.
+                 */
                 l = TCNT1L;
                 h = TCNT1H;
                 time_usec = (((uint16_t)h << 8) | l) - lastCount +2;
@@ -205,7 +210,6 @@ void PPM::countChannels( ppm_t *wSet, uint16_t time_usec, bool level) {
                 detectedChannels = channels;
                 channels = 0;
                 pulseIdx = 0;
-                frame_usec = 0;
                 detectStep = DETECT_STEP_VERIFY;
             } else {
                 detectStep = DETECT_STEP_INIT;
@@ -243,11 +247,9 @@ boolean PPM::storeFrame( ppm_t *wSet, uint16_t time_usec, bool level) {
         if( time_usec > settings.syncValidMin_usec) { // Sync detected
 
             if( channels == detectedChannels) { // All channels scanned
-
-                frame_usec += time_usec;
-
+                
                 if( detectStep == DETECT_STEP_SYNCED) {
-                    storeFrameTime( wSet, frame_usec);
+                    storeFrameTime( wSet, lastCount >> 1);
 
                     wSet->channels = detectedChannels;
                     wSet->frames++;
@@ -261,7 +263,6 @@ boolean PPM::storeFrame( ppm_t *wSet, uint16_t time_usec, bool level) {
 
                 channels = 0;
                 pulseIdx = 0;
-                frame_usec = 0;
                 return true;
 
             } else { // servo channels missing
@@ -325,7 +326,6 @@ void PPM::initTimings( ppm_t *wSet) {
 void PPM::storePulse( ppm_t *wSet, uint16_t time_usec) {
   
     if (pulseIdx < PPM_MAX_PULSE) {
-        frame_usec += time_usec;
         pulse_usec[pulseIdx] = time_usec;
         pulseIdx++;
     } else {

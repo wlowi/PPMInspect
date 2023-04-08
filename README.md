@@ -70,8 +70,13 @@ lcd.begin(&Adafruit128x64, DISPLAY_I2C_ADDRESS);
 
 - Servotiming pro Kanal: +/- 1 Microsekunde
 - Puls: +/- 1 Microsekunde
-- Frame: +/- 1 Microsekunde * Anzahl Kanäle (Weil Frame Zeit durch Aufsummieren der Kanäle berechet wird)
+- Frame: +/- 1 Microsekunde
 
 ## TODO
 
-- Frame Genauigkeit verbessern
+- Nix zur Zeit
+
+## History
+
+0.9.15: Frame Genauigkeit verbessert\
+0.9.14: Min/max Werte im Voltmeter

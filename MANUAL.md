@@ -109,6 +109,12 @@ Abstand der vertikalen Gitterlinien: 10 Samples.
 
 Ein einfaches Voltmeter. (ACHTUNG: Nur positive Spannungen)
 
+Seit Version 0.9.14 werden die gemessenen minimum und maximum Wert zusätzlich angezeigt.\
+Ausserdem wurde die Samplefrequenz erhöht.
+
+Ein Druck auf die DOWN Taste schaltet min/max aus und setzt die Samplefrequenz auf 2 Werte pro Sekunde herunter.
+Ein langer Druck auf die UP Taste setzt die min/max Werte zurück.
+
 ![Voltmeter](doc/PPMInspect_voltmeter.JPG "Voltmeter")
 
 ---

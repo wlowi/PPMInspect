@@ -31,18 +31,7 @@ extern ChannelScreen channelScreen;
 
 #define ROW_COUNT 9
 
-/*
-const __FlashStringHelper *DataScreenRowNames[ROW_COUNT] = {
-    F("PPM"),
-    F("Frame"),
-    F("Pulse"),
-    F("Pulse"),
-    F("Level"),
-    F("Frames"),
-    F("Bad frames")};
-*/
-
-const char *DataScreenRowNames[ROW_COUNT] = {
+const char* const DataScreenRowNames[ROW_COUNT] = {
     "PPM",
     "Frame",
     "Pulse",
