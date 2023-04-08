@@ -29,20 +29,29 @@
 
 #include "Arduino.h"
 
-#if defined(ARDUINO)
-#define LOG(f)
-#define LOGV(f, ...)
+// #define TEXTUI_DEBUG
+
+#ifdef TEXTUI_DEBUG
+    #if defined(ARDUINO)
+        #define UILOG(f)
+        #define UILOGV(f, ...)
+    #else
+        #include "stdio.h"
+        #include <cstring>
+        #define UILOG(f) printf(f)
+        #define UILOGV(f, ...) printf(f, __VA_ARGS__)
+    #endif
 #else
-#include "stdio.h"
-#include <cstring>
-#define LOG(f) printf(f)
-#define LOGV(f, ...) printf(f, __VA_ARGS__)
+    #define UILOG(f)
+    #define UILOGV(f, ...)
 #endif
 
-#define EVENT_TYPE_NONE 0
-#define EVENT_TYPE_IRQ 1
+#define EVENT_TYPE_NONE  0
+#define EVENT_TYPE_TICK  1
 #define EVENT_TYPE_TIMER 2
-#define EVENT_TYPE_KEY 3
+#define EVENT_TYPE_KEY   3
+
+#define EVENT_TICK_msec  100
 
 #define KEY_NONE  0
 #define KEY_UP    1
@@ -96,11 +105,11 @@ public:
         eventPending = false;
     }
 
-    void setIRQEvent()
+    void setTickEvent()
     {
-        eventType = EVENT_TYPE_IRQ;
+        eventType = EVENT_TYPE_TICK;
         key = KEY_NONE;
-        count = 0;
+        count = EVENT_TICK_msec;
         eventPending = true;
     }
 
@@ -191,6 +200,7 @@ public:
 
     virtual void normalColors() = 0;
     virtual void selectedColors() = 0;
+    virtual void editColors() = 0;
 
     virtual void setInvert(bool inv) = 0;
 
@@ -236,8 +246,12 @@ public:
     void printFixFloat2(fixfloat2_t val, uint8_t width);
 };
 
+/* NOTE: 
+ * If you add a new type please update Cell::isEditable()
+ */
 enum CellEditType_t
 {
+    BLANK_T,
     BOOLEAN_T,
     INT8_T,
     INT16_T,
@@ -271,7 +285,7 @@ class Cell
 {
 
 private:
-    CellEditType_t type;
+    CellEditType_t type = BLANK_T;
     CellType_t value;
     int32_t numericMin;
     int32_t numericMax;
@@ -279,6 +293,7 @@ private:
     uint8_t screenCol;
 
 public:
+    void setBlank();
     void setBool(uint8_t screenX, bool v);
     void setInt8(uint8_t screenX, int8_t v, uint8_t width, int16_t nmin, int16_t nmax);
     void setInt16(uint8_t screenX, int16_t v, uint8_t width, int16_t nmin, int16_t nmax);
@@ -317,11 +332,16 @@ class TextUIScreen
 
 protected:
     TextUIScreen *menuNext;
+    /* Last selected item (row number) */
+    uint8_t selection = 0;
 
 public:
     /* This is the name of the module if it appears within a menu */
     virtual const char *getHeader() = 0;
     virtual const char *getMenuName() = 0;
+
+    void setSelection( uint8_t sel) { selection = sel; }
+    uint8_t getSelection() { return selection; }
 
     virtual bool goBackItem() { return false; }
 
@@ -343,7 +363,7 @@ public:
     }
 
     /* Return true if values of the row are editable */
-    virtual bool isRowEditable(uint8_t row) { return false; }
+    virtual bool isRowEditable(uint8_t row) { return true; }
     /* Return true if the value of this cell is editable */
     virtual bool isColEditable(uint8_t row, uint8_t col) { return false; }
 
@@ -388,21 +408,26 @@ class TextUIMenu : public TextUIScreen
 
 private:
     const char *header;
+    bool useGoBackItem = false;
     TextUIScreen *first = nullptr;
     TextUIScreen *last = nullptr;
 
 public:
     TextUIMenu(const char *hdr);
+    TextUIMenu(const char *hdr, bool goBackItem);
 
     void addScreen(TextUIScreen *screenPtr);
 
     uint8_t getScreenCount();
     TextUIScreen *getFirstScreen();
+    TextUIScreen *getNextScreen( TextUIScreen *scr);
     TextUIScreen *getScreen(uint8_t idx);
 
     /* From TextUIScreen */
     const char *getHeader();
     const char *getMenuName();
+
+    bool goBackItem() { return useGoBackItem; }
 
     bool isRowExecutable(uint8_t row);
     void rowExecute(TextUI *ui, uint8_t row);
@@ -487,11 +512,13 @@ private:
 
     uint8_t refresh = REFRESH_FULL;
     boolean reversedNav = false;
-
+    boolean itemPopped = false;
     TextUILcd *display = nullptr;
     TextUIInput *inputQueue = nullptr;
-    uiTimer_t timer_msec;
-    unsigned long nextTimer_msec;
+    TextUIInput *currentInput = nullptr;
+    uiTimer_t timer_msec = 0;
+    unsigned long nextTimer_msec = 0;
+    unsigned long nextTick_msec = 0;
 
 public:
     void setTimer(uiTimer_t msec);
@@ -506,6 +533,8 @@ public:
     boolean isReversedNav();
 
     boolean inEditMode();
+    /* Cancel edit for this table */
+    void cancelEdit(TextUIScreen *toCancel);
     
     Event *getEvent();
     void handle(Event *ev);

@@ -31,7 +31,7 @@ void Cell::render( TextUILcd *lcd, bool edit) {
     lcd->setColumn( screenCol);
 
     if( edit) {
-        lcd->selectedColors();
+        lcd->editColors();
     } else {
         lcd->normalColors();
     }
@@ -85,6 +85,7 @@ void Cell::render( TextUILcd *lcd, bool edit) {
             lcd->printStr( value.list[value.intV], value.size);
             break;
 
+        case BLANK_T:
         default:
             // ignore
             break;
@@ -192,7 +193,8 @@ bool Cell::edit( Event *event) {
             changed = true;
         }
         break;
-        
+    
+    case BLANK_T:
     default:
         // ignore
         break;
@@ -203,7 +205,12 @@ bool Cell::edit( Event *event) {
 
 bool Cell::isEditable() {
 
-    return (type != LABEL_T);
+    return ((type != LABEL_T) && (type != FLABEL_T) && (type != BLANK_T));
+}
+
+void Cell::setBlank() {
+
+    type = BLANK_T;
 }
 
 void Cell::setBool( uint8_t screenX, bool v) {
@@ -308,6 +315,11 @@ void Cell::setList( uint8_t screenX, const char* const* v, uint8_t count, uint8_
         if( sz > value.size) { value.size = sz; }
     }
 }
+
+bool Cell::getBool() const {
+
+    return value.boolV;
+} 
 
 int8_t Cell::getInt8() const {
 

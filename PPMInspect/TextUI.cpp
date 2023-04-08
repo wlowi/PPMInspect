@@ -28,8 +28,12 @@
 
 void TextUI::setTimer( uiTimer_t t_msec) {
 
-  timer_msec = (t_msec < 10) ? 10 : t_msec;
-  nextTimer_msec = millis() + timer_msec;
+  if( t_msec == 0) { // Disable Timer
+    nextTimer_msec = timer_msec = 0;
+  } else {
+    timer_msec = (t_msec < 10) ? 10 : t_msec;
+    nextTimer_msec = millis() + timer_msec;
+  }
 }
 
 void TextUI::setDisplay( TextUILcd *lcd) {
@@ -55,26 +59,62 @@ void TextUI::setHomeScreen( TextUIScreen *scr) {
     
 Event *TextUI::getEvent() {
 
-  if( millis() > nextTimer_msec) {
-    
-    nextTimer_msec = millis() + timer_msec;
-    event.setTimerEvent();
-    
-  } else {
+  unsigned long now = millis();
+  TextUIInput *lastInput;
+  
+  event.setNoEvent(); 
+  
+  /* First check input queues.
+   * Queues are checked round robin.
+   * If there are two queues and the first queue had an event pending,
+   * next time the second queue is checked first. 
+   */
+  if( currentInput == nullptr)
+  {
+    currentInput = inputQueue;
+  }
 
-    TextUIInput *in = inputQueue;
-  
-    event.setNoEvent(); 
-  
-    while( in != nullptr) {
-      if( in->pending() ) {
-        in->setEvent( &event);
+  if( currentInput != nullptr)
+  {
+    lastInput = currentInput;
+
+    do
+    {
+      if( currentInput->pending() )
+      {
+        currentInput->setEvent( &event);
+        currentInput = currentInput->getNext();
+        if( currentInput == nullptr)
+        {
+          currentInput = inputQueue;
+        }
+
         break;
       }
-      in = in->getNext();
+
+      currentInput = currentInput->getNext();
+      if( currentInput == nullptr)
+      {
+        currentInput = inputQueue;
+      }
+
+    } while( currentInput != lastInput);
+  }
+
+  if( event.getType() == EVENT_TYPE_NONE ) {
+    if( timer_msec && (now >= nextTimer_msec)) {
+    
+      nextTimer_msec = now + timer_msec;
+      event.setTimerEvent();
+    
+    } else if( now >= nextTick_msec ) {
+
+      nextTick_msec = now + EVENT_TICK_msec;
+      event.setTickEvent();
+
     }
   }
-  
+
   return &event;
 }
 
@@ -93,6 +133,12 @@ boolean TextUI::inEditMode() {
   return handler.inEditMode();
 }
 
+/* Cancel edit for this table */
+void TextUI::cancelEdit(TextUIScreen *toCancel) {
+
+  handler.cancelEdit( toCancel);
+}
+
 void TextUI::handle( Event *ev) {
 
   if( CURRENT_SCREEN == nullptr || display == nullptr) {
@@ -100,7 +146,12 @@ void TextUI::handle( Event *ev) {
   }
 
   if( refresh == REFRESH_FULL) {
-    handler.set( this, CURRENT_SCREEN);
+    if( itemPopped) {
+      handler.set( this, CURRENT_SCREEN, CURRENT_SCREEN->getSelection());
+      itemPopped = false;
+    } else {
+      handler.set( this, CURRENT_SCREEN);
+    }
     refresh = REFRESH_OK;
   } else if( refresh == REFRESH_SCREEN) {
     handler.forceRefresh();
@@ -112,7 +163,7 @@ void TextUI::handle( Event *ev) {
 
 void TextUI::toHome() {
 
-  LOG("toHome()\n");
+  UILOG("toHome()\n");
 
   stackPtr = 0;
   CURRENT_SCREEN = homeScreen;
@@ -121,7 +172,7 @@ void TextUI::toHome() {
 
 void TextUI::toScreen( TextUIScreen *scr) {
 
-  LOG("toScreen()\n");
+  UILOG("toScreen()\n");
 
   stackPtr = 0;
   CURRENT_SCREEN = scr;
@@ -130,7 +181,7 @@ void TextUI::toScreen( TextUIScreen *scr) {
 
 void TextUI::switchScreen( TextUIScreen *scr) {
 
-  LOGV("switchScreen(): %d\n", stackPtr);
+  UILOGV("switchScreen(): %d\n", stackPtr);
 
   CURRENT_SCREEN = scr;
   refresh = REFRESH_FULL;
@@ -142,7 +193,7 @@ void TextUI::pushScreen( TextUIScreen *scr) {
     stackPtr++;
   }
 
-  LOGV("pushScreen(): %d\n", stackPtr);
+  UILOGV("pushScreen(): %d\n", stackPtr);
 
   CURRENT_SCREEN = scr;
   refresh = REFRESH_FULL;
@@ -154,7 +205,8 @@ void TextUI::popScreen() {
     stackPtr--;
   }
 
-  LOGV("popScreen(): %d\n", stackPtr);
+  UILOGV("popScreen(): %d\n", stackPtr);
 
   refresh = REFRESH_FULL;
+  itemPopped = true;
 }
