@@ -25,6 +25,8 @@
 */
 
 /*
+ * This Sketch is for an Arduino Nano
+ * 
  *      0  300     1100  1500  1900                22000
  *  ____     _______                 _____ ... ______
  *      |   |       |     |     |   |                |
@@ -45,8 +47,11 @@
 
 #define PPM_CHANNELS        9
 
-/* PWM output OC3A of timer 3 */
-#define PPM_PIN             5
+/* PWM output 
+ *  Pin 9 on Arduino Nano (OC1A of timer 1)
+ *  Pin 5 on Arduino Micro Pro (OC3A of timer3)
+ */
+#define PPM_PWM_PIN         9
 
 typedef uint8_t  channel_t;
 typedef uint16_t timingUsec_t;
@@ -77,11 +82,8 @@ ppmSet_t ppmSet;
 static channel_t outputChannel;
 static timingUsec_t inFrameTime;
 
-#define H( v ) (uint8_t)((v >> 8) & 0xff)
-#define L( v ) (uint8_t)(v & 0xff)
-
-/* Timer 3 overflow interrupt */
-ISR(TIMER3_OVF_vect) {
+/* Timer 1 overflow interrupt */
+ISR(TIMER1_OVF_vect) {
 
   timingUsec_t nextTimerValue;
   
@@ -100,11 +102,9 @@ ISR(TIMER3_OVF_vect) {
 
   /* We nedd to count 1498..1499..0..1
    * not 1498..1499..1500..0..1
-   * Subtract -2 because of 0.5 usec timer resolution.
    */
-  nextTimerValue -= 2;
-  ICR3H = H(nextTimerValue);
-  ICR3L = L(nextTimerValue);
+  nextTimerValue--;
+  ICR1 = nextTimerValue;
 }
 
 void setup() {
@@ -133,36 +133,32 @@ void initPPM() {
     outputChannel = 0;
     inFrameTime = 0;
     
-    pinMode( PPM_PIN, OUTPUT);
+    pinMode( PPM_PWM_PIN, OUTPUT);
     
     /* Enable timer in power reduction register */
-    PRR1 &= ~bit(PRTIM3);
+    PRR &= ~bit(PRTIM1);
     
     /* Set initial timer counter value */
-    TCNT3H = (byte)0;
-    TCNT3L = (byte)0;
+    TCNT1 = 0;
        
-    /* COM3A1, COM3A0     : Set OC3A on compare match, clear at TOP
-     * WGM33, WGM32, WGM31: TOP is ICR3
-     * CS31               : Prescaler /8 = 2Mhz = 0.5 usec
+    /* COM1A1, COM1A0     : Set OC1A on compare match, clear at TOP
+     * WGM13, WGM12, WGM11: TOP is ICR1
+     * CS11               : Prescaler /8 = 2Mhz = 0.5 usec
      */
-    TCCR3A = bit(COM3A1) | bit(COM3A0) | bit(WGM31);
-    TCCR3B = bit(WGM33) | bit(WGM32) | bit(CS31);
-    TCCR3C = (byte)0;
+    TCCR1A = bit(COM1A1) | bit(COM1A0) | bit(WGM11);
+    TCCR1B = bit(WGM13) | bit(WGM12) | bit(CS11);
+    TCCR1C = (byte)0;
 
     /* Set TOP */
-    ICR3H = H((PPM_SPACE_usec + PPM_INIT_usec) << 1);
-    ICR3L = L((PPM_SPACE_usec + PPM_INIT_usec) << 1);
+    ICR1 = ((PPM_SPACE_usec + PPM_INIT_usec) << 1) -1;
 
-    /* Set compare to end of pulse
-     *  
-     * Subtract 2 because output is set to the next falling edge after compare.     * 
+    /* Set compare to end of pulse time.
+     * Subtract 1 because we count 298..299..0..1
      */
-    OCR3AH = H((PPM_SPACE_usec << 1) -2);
-    OCR3AL = L((PPM_SPACE_usec << 1) -2);
+    OCR1A = (PPM_SPACE_usec << 1) -1;
     
-    /* TOIE3: Timer overflow interrupt */
-    TIMSK3 = bit(TOIE3);
+    /* TOIE1: Timer overflow interrupt */
+    TIMSK1 = bit(TOIE1);
   }
 }
 

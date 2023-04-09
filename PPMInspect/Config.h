@@ -30,7 +30,7 @@
 #include "Arduino.h"
 #include "TextUI.h"
 
-#define PPMINSPECT_VERSION "0.9.15"
+#define PPMINSPECT_VERSION "0.9.16"
 
 #define ENABLE_MEMDEBUG
 

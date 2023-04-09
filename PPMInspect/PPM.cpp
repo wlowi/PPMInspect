@@ -111,17 +111,15 @@ ISR(TIMER1_CAPT_vect) {
     uint8_t h, l;
     uint16_t time_usec;
     bool level;
-    bool overFlow;
 
     l = ICR1L;
     h = ICR1H;
     
     /* Flip detection edge */
-    TCCR1B ^= _BV(ICES1);
-    TIFR1 |= _BV(ICF1);
+    TCCR1B ^= bit(ICES1);
+    TIFR1 |= bit(ICF1);
     
-    overFlow = TIFR1 & _BV(TOV1);
-    time_usec = (((uint16_t)h << 8) | l) - lastCount +1;
+    time_usec = (((uint16_t)h << 8) | l) - lastCount;
     lastCount = (((uint16_t)h << 8) | l);
     time_usec >>= 1;  /* Divide by 2 because of 0.5 usec timer resolution */
     
@@ -131,10 +129,10 @@ ISR(TIMER1_CAPT_vect) {
 
     ppm.startADC( ADC_PPM);
     
-    if (overFlow)
+    if (TIFR1 & bit(TOV1)) // timer overflow
     {
         /* This should actually never happen as we have overflow interrupt enabled */
-        TIFR1 |= _BV(TOV1); /* clear overflow bit */
+        TIFR1 |= bit(TOV1); /* clear overflow bit */
         detectStep = DETECT_STEP_INIT;
     }
     else
@@ -142,8 +140,7 @@ ISR(TIMER1_CAPT_vect) {
         switch (detectStep)
         {
         case DETECT_STEP_INIT:
-            TCNT1H = (byte)0;
-            TCNT1L = (byte)0;
+            TCNT1 = 0;
             lastCount = 0;
 
             pulseIdx = 0;
@@ -156,8 +153,7 @@ ISR(TIMER1_CAPT_vect) {
         case DETECT_STEP_SYNCWAIT:
             if (time_usec > settings.syncValidMin_usec)
             {
-                TCNT1H = (byte)0;
-                TCNT1L = (byte)0;
+                TCNT1 = 0;
                 lastCount = 0;
 
                 wSet->pulseLevel = level;
@@ -177,15 +173,14 @@ ISR(TIMER1_CAPT_vect) {
               
                 /* We don't set the timer back to 0.
                  * Instead we get the current timer and compute the offset time 
-                 * used by the ISR by subtracting the couter stored in lastCount.
+                 * used by the ISR by subtracting the counter stored in lastCount.
                  * This is the corrected new timer base.
                  */
                 l = TCNT1L;
                 h = TCNT1H;
                 time_usec = (((uint16_t)h << 8) | l) - lastCount +2;
                 
-                TCNT1H = (byte)(time_usec >> 8);
-                TCNT1L = (byte)(time_usec);
+                TCNT1 = time_usec;
                 
                 lastCount = 0;
             }
@@ -204,8 +199,7 @@ void PPM::countChannels( ppm_t *wSet, uint16_t time_usec, bool level) {
         if( time_usec > settings.syncValidMin_usec) { // Sync detected
 
             if( channels >= PPM_MIN_CHANNELS) {
-                TCNT1H = (byte)0;
-                TCNT1L = (byte)0;
+                TCNT1 = 0;
                 lastCount = 0;                    
                 detectedChannels = channels;
                 channels = 0;
@@ -376,17 +370,16 @@ void PPM::startScan() {
         /* Enable Input Capture Noice Canceler 
          * Prescaler /8 = 2Mhz = 0.5 usec
          */
-        TCCR1B = _BV(ICNC1) | _BV(CS11);
+        TCCR1B = bit(ICNC1) | bit(CS11);
 
-        TCNT1H = (byte)0;
-        TCNT1L = (byte)0;
+        TCNT1 =0;
         lastCount = 0;
         
         /* Enable timer overflow interrupt
          * Enable input capture interrupt
          */
-        TIFR1 |= _BV(TOV1); /* clear overflow bit */
-        TIMSK1 |= _BV(ICIE1) | _BV(TOIE1);
+        TIFR1 |= bit(TOV1); /* clear overflow bit */
+        TIMSK1 |= bit(ICIE1) | bit(TOIE1);
     }
 }
 
@@ -394,7 +387,7 @@ void PPM::stopScan() {
   
     ATOMIC_BLOCK(ATOMIC_FORCEON)
     {
-        TIMSK1 &= ~(_BV(ICIE1) | _BV(TOIE1));
+        TIMSK1 &= ~(bit(ICIE1) | bit(TOIE1));
     }
 }
 
@@ -445,21 +438,21 @@ void PPM::startADC( uint8_t convertType) {
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE) {
 
         /* Disable power reduction for ADC */
-        PRR &= ~_BV(PRADC);
+        PRR &= ~bit(PRADC);
 
         /* REFS1 = 0, REFS0 = 1   ==>   VCC with ext. cap. on AREF */
-        ADMUX = _BV(REFS0);
+        ADMUX = bit(REFS0);
 
         /* Prescaler /128   ==>   16MHz / 128 = 125KHz */
-        ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0);
+        ADCSRA = bit(ADEN) | bit(ADPS2) | bit(ADPS1) | bit(ADPS0);
         ADCSRB = 0;
 
         /* Set MUX */
-        ADMUX &= ~(_BV(MUX3) | _BV(MUX2) | _BV(MUX1) | _BV(MUX0));
+        ADMUX &= ~(bit(MUX3) | bit(MUX2) | bit(MUX1) | bit(MUX0));
         ADMUX |= (port - A0);
 
         /* Start convertsion */
-        ADCSRA |= _BV(ADSC) | _BV(ADIE); 
+        ADCSRA |= bit(ADSC) | bit(ADIE); 
     }
 }
 
@@ -467,7 +460,7 @@ fixfloat1_t PPM::readADC() {
 
     startADC( ADC_VM);
     /* Wait for completion */
-    while( ADCSRA & _BV(ADSC)) ;
+    while( ADCSRA & bit(ADSC)) ;
 
     return analogConvert( ADC_VM, adcValue);
 }
@@ -476,7 +469,7 @@ fixfloat1_t PPM::readVCC() {
 
     startADC( ADC_VCC);
     /* Wait for completion */
-    while( ADCSRA & _BV(ADSC)) ;
+    while( ADCSRA & bit(ADSC)) ;
 
     return analogConvert( ADC_VCC, adcValue);
 }
@@ -519,23 +512,23 @@ boolean PPM::fetchArray( uint8_t dataArray[], uint8_t sz, uint16_t resUsec,  uin
 
 #define START_ADC_CONVERSION() \
 do { \
-  ADCSRA |= _BV(ADSC); \
+  ADCSRA |= bit(ADSC); \
 } while (false)
 
 #define WAIT_ADC_COMPLETE() \
 do { \
-  while( ADCSRA & _BV(ADSC)) { } \
+  while( ADCSRA & bit(ADSC)) { } \
 } while (false)
 
 #define WAIT_TIMER_OVERFLOW() \
 do { \
-  TIFR1 |= _BV(TOV1); \
-  while( (TIFR1 & _BV(TOV1)) == 0) { } \
+  TIFR1 |= bit(TOV1); \
+  while( (TIFR1 & bit(TOV1)) == 0) { } \
 } while (false)
 
 #define CLEAR_TIMER_OVERFLOW() \
 do { \
-  TIFR1 |= _BV(TOV1); \
+  TIFR1 |= bit(TOV1); \
 } while (false)
 
 #define SET_TIMER_TOPA( h, l) \
@@ -556,7 +549,7 @@ do { \
   TCNT1L = (byte)0; \
 } while (false)
 
-#define NO_TIMER_INTERRUPT ((TIFR1 & _BV(TOV1)) == 0)
+#define NO_TIMER_INTERRUPT ((TIFR1 & bit(TOV1)) == 0)
 
 /* ***************** */
 
@@ -575,27 +568,27 @@ do { \
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE) {
 
         /* Disable power reduction for ADC */
-        PRR &= ~_BV(PRADC);
+        PRR &= ~bit(PRADC);
 
         /* REFS1 = 0, REFS0 = 1   ==>   VCC with ext. cap. on AREF */
-        ADMUX = _BV(REFS0);
+        ADMUX = bit(REFS0);
 
         /* Prescaler /2   ==>   16MHz / 2 = 8000KHz */
-        ADCSRA = _BV(ADEN) | _BV(ADPS0);
+        ADCSRA = bit(ADEN) | bit(ADPS0);
         ADCSRB = 0;
 
         /* Set mux and left adjusst result */
-        ADMUX &= ~(_BV(MUX3) | _BV(MUX2) | _BV(MUX1) | _BV(MUX0));
-        ADMUX |= _BV(ADLAR) | (PORT_ANALOG_IN - A0);
+        ADMUX &= ~(bit(MUX3) | bit(MUX2) | bit(MUX1) | bit(MUX0));
+        ADMUX |= bit(ADLAR) | (PORT_ANALOG_IN - A0);
 
-        DIDR0 |= _BV( PORT_ANALOG_IN - A0);
+        DIDR0 |= bit( PORT_ANALOG_IN - A0);
         
 
         /* Fast PWM mode */
-        TCCR1A = _BV(WGM11) | _BV(WGM10);
+        TCCR1A = bit(WGM11) | bit(WGM10);
         
         /* Prescaler /8 = 2Mhz = 0.5 usec */
-        TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS11);
+        TCCR1B = bit(WGM13) | bit(WGM12) | bit(CS11);
 
         TCCR1C = (byte)0;
         
