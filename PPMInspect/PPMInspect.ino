@@ -95,7 +95,7 @@ void setup()
 {
     configScreen.load();
 
-    textUI.setDisplay(new TextUILcdSSD1306());
+    textUI.setDisplay(new TextUILcdSSD1306( &SH1106_128x64 ));
     textUI.setInput(new TextUISimpleKbd(BUTTON_COUNT, buttons, skeys, lkeys));
     textUI.setReversedNav( true);
 

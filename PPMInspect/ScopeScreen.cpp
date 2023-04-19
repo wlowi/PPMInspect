@@ -123,6 +123,7 @@ void ScopeScreen::handleEvent(TextUI *ui, Event *e)
         switch (e->getKey())
         {
         case KEY_CLEAR:
+        case KEY_UP:
             ui->popScreen();
             e->markProcessed();
             break;
@@ -133,7 +134,7 @@ void ScopeScreen::handleEvent(TextUI *ui, Event *e)
             break;
         }
     }
-    else if (e->getType() == EVENT_TYPE_TIMER)
+    else if (e->getType() == EVENT_TYPE_TICK)
     {
         update( ui);
     } 

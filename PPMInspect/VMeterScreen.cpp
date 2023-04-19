@@ -80,6 +80,7 @@ void VMeterScreen::handleEvent(TextUI *ui, Event *e)
         {
         case KEY_CLEAR:
         case KEY_ENTER:
+        case KEY_UP:
             ui->popScreen();
             e->markProcessed();
             break;

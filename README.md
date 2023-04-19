@@ -18,7 +18,7 @@ Zur [Bedienungsanleitung](MANUAL.md)
 ## Handware
 
 - 1 Arduino Nano
-- 1 OLED Display 1.3" (SSH1106 Controller)
+- 1 OLED Display 1.3" (SH1106 Controller)
 - 3 Taster (RAFI Kurzhubtaster RACON 8 mit Stößel 7.5mm Höhe 8.2mm)
 - 1 Z-Diode 4.7V
 - 3 Widerstände 1/8 W 47k
@@ -60,11 +60,11 @@ PPMInspect - Der Source Code
 
 ## Und Sonst...
 
-### Wird anstelle eines SH1106 ein SSD1306 Display Controller verwendet muss in TextUILcdSSd1306.cpp Zeile 34 von:
+### Wird anstelle eines SH1106 ein SSD1306 Display Controller verwendet muss in PPMInspect.ino Zeile 98 von:
 
-lcd.begin(&SH1106_128x64, DISPLAY_I2C_ADDRESS); \
+textUI.setDisplay(new TextUILcdSSD1306( &SH1106_128x64 )); \
 geändert werden in: \
-lcd.begin(&Adafruit128x64, DISPLAY_I2C_ADDRESS);
+textUI.setDisplay(new TextUILcdSSD1306( &Adafruit128x64 ));
 
 ### Genauigkeit PPM Scan
 
@@ -78,5 +78,7 @@ lcd.begin(&Adafruit128x64, DISPLAY_I2C_ADDRESS);
 
 ## History
 
+0.9.17: User Interface aktualisiert
+0.9.16: PPM Erzeugung verbessert
 0.9.15: Frame Genauigkeit verbessert\
 0.9.14: Min/max Werte im Voltmeter

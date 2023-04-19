@@ -637,7 +637,7 @@ do { \
 
             CLEAR_TIMER_OVERFLOW();
             
-            for( uint16_t w=0; w<20000; w++) {
+            for( uint16_t w=0; w<25000; w++) {
               
               START_ADC_CONVERSION();
               WAIT_ADC_COMPLETE();

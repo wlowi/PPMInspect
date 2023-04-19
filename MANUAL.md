@@ -1,6 +1,8 @@
 # PPMInspect
 
-Diese Anleitung beschreibt PPMInspect 0.9.13 (März 2023)
+Diese Anleitung beschreibt PPMInspect 0.9.17 (April 2023)\
+Einige Bilder zeigen allerdings noch die Version 0.9.13.
+
 
 ![AtWork](doc/PPMInspect_at_work.JPG "AtWork")
 
@@ -21,6 +23,10 @@ Taster2:
 
 Taster3:
 - kurz:   DOWN
+
+
+Seit Version 0.9.15 wird die Versorgungsspannung überwacht.\
+Fällt die Spannung unter den in den Einstellungen eingestellten Wert, so wird im Display periodisch "Low Bat" angezeigt.
 
 ---
 ## Funktionen
@@ -75,7 +81,7 @@ Folgende Werte können durch Drücken der UP / DOWN Tasten verstellt werden.
   Damit wird der lange Sync Impuls ausgeblended und es wird immer auf den ersten Kanal getriggert. \
   Ein guter Wert für ein PPM Signal sind 2500 Microsekunden.
 
-Mit CLEAR (langer Druck auf die ENTER Taste) wechselt man zurück in das Hauptmenü.
+Mit UP oder CLEAR (langer Druck auf die ENTER Taste) wechselt man zurück in das Hauptmenü.
 
 ![MicroScope1](doc/PPMInspect_scope_200u.JPG "MicroScope1")
 
@@ -128,6 +134,7 @@ Ein langer Druck auf die UP Taste setzt die min/max Werte zurück.
 
 - Vppm +/-: Kalibrierung der gemessenen Signalspannung.
 - Vcc +/-: Kalibrierung der gemessenen Versorgungsspannung.
+- Low Bat: Warnschwelle für die Versorgungsspannung.
 - Memfree: Freier RAM Speicher in bytes. (Bei Programstart / minimum)
 
 ![Settings2](doc/PPMInspect_settings2.JPG "Settings2")
