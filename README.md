@@ -78,7 +78,7 @@ textUI.setDisplay(new TextUILcdSSD1306( &Adafruit128x64 ));
 
 ## History
 
-0.9.17: User Interface aktualisiert
-0.9.16: PPM Erzeugung verbessert
+0.9.17: User Interface aktualisiert\
+0.9.16: PPM Erzeugung verbessert\
 0.9.15: Frame Genauigkeit verbessert\
 0.9.14: Min/max Werte im Voltmeter
