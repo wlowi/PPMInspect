@@ -67,11 +67,11 @@ void ScopeScreen::update(TextUI *ui)
     if( ppmH.fetchArray( dataArray, ARRAY_SZ, resToUSec(resolution), oversampling, triggerMode, triggerLevel, triggerDelay * 100)) {
 
         for( uint8_t x = 0; x < ARRAY_SZ; x++) {
-             /* Divide by 5 to map range [0,255] to grid of height [10,61] */
+             /* Divide by 5 to map range [0,255] to grid of height [10,63] (approximately) */
             dataArray[x] /= 5;
         }
 
-        lcd->drawGrid( dataArray, ARRAY_SZ, 0, 10, 127, 61, grid ? 10 : 0, marker);
+        lcd->drawGrid( dataArray, ARRAY_SZ, 0, 10, 127, 63, grid ? 10 : 0, marker);
         marker = !marker;
     }
 }

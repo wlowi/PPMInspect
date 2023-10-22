@@ -5,3 +5,4 @@
 **/*.pcb-bak
 test/EEPROM.DAT
 test/RunTest
+PCB/PPMInspect-backups

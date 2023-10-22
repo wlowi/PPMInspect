@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "PPMInspect-rescue")(type "Legacy")(uri "${KIPRJMOD}/PPMInspect-rescue.lib")(options "")(descr ""))
+)

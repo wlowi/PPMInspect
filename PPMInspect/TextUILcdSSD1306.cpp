@@ -144,61 +144,94 @@ void TextUILcdSSD1306::printChar( char ch) {
   lcd.write( ch);
 }
 
-void TextUILcdSSD1306::drawGrid( uint8_t dataArray[], uint8_t sz, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t grid, boolean marker)
+/* Draw a graph optionally with grid.
+ * Y grid size is always 8.
+ * 
+ * dataArray[]  - Data
+ * sz           - Size of dataArray
+ * x0           - Start x/y (0,0 is upper left corner)
+ * y0
+ * x1           - End x/y
+ * y1
+ * gridX        - Grid size in X direction, 0 disables grid
+ * marker       - Draw update marker 
+ */
+void TextUILcdSSD1306::drawGrid( uint8_t dataArray[], uint8_t sz, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t gridX, boolean marker)
 {
   uint8_t m;
   uint8_t y;
-  uint8_t p;
-  uint8_t sRow;
-  uint8_t eRow;
-  uint8_t d0Row;
-  uint8_t d1Row;
-  uint8_t d0;
-  uint8_t d1;
-  uint8_t r;
+  uint8_t prevY;
   uint8_t x;
   uint8_t i;
-  
-  sRow = y0 / 8;
-  eRow = y1 / 8;
 
-  for( r = sRow; r <= eRow; r++) {
+  uint8_t startRow;
+  uint8_t endRow;
+  uint8_t row;
+  
+  uint8_t d0Row;
+  uint8_t d1Row;
+  uint8_t d0y;
+  uint8_t d1y;
+  
+  startRow = y0 / 8;
+  endRow = y1 / 8;
+
+  for( row = startRow; row <= endRow; row++) {
     lcd.setCol( x0);
-    lcd.setRow( r);
+    lcd.setRow( row);
 
     i = 0;
-    p = y1 - dataArray[i++];
+    prevY = y1 - dataArray[i++];
+    
     for( x = x0; (x <= x1) && (i < sz); x++) {
       y = y1 - dataArray[i++];
 
-      if( y < p) {
-        d0 = y; d1 = p;
+      /* Compute row and y value of the vertical line to draw.
+       * d0 has the lower numeric value.
+       */
+      if( y < prevY) {
+        d0y = y; d1y = prevY;
       } else {
-        d0 = p; d1 = y;
+        d0y = prevY; d1y = y;
       }
 
-      d0Row = d0 / 8;
-      d1Row = d1 / 8;
-      
-      if( r == d0Row && d0Row == d1Row) {
-        m = 255 - ((1 << (d0 % 8)) -1);
-        m &= (1 << ((d1 % 8) +1)) -1;
-      } else if( r == d0Row) {
-        m = 255 - ((1 << (d0 % 8)) -1);
-      } else if( r == d1Row) {
-        m = (1 << ((d1 % 8) +1)) -1;
-      } else if (r < d0Row || r > d1Row) {
-        if( grid && ((x % grid) == 0)) {
-          m = 0b10000000; 
-        } else {
+      d0Row = d0y / 8;
+      d1Row = d1y / 8;
+
+      if( row == d0Row && d0Row == d1Row) {
+        /* Start (d0y) and end (d1y) are within the same row.
+         * Draw a line from d0y to d1y.
+         */
+        m = 255 - ((1 << (d0y % 8)) -1);
+        m &= (1 << ((d1y % 8) +1)) -1;
+        
+      } else if( row == d0Row) {
+        /* Start (d0y) is within row.
+         * Draw a line from d0y to end of row.
+         */
+        m = 255 - ((1 << (d0y % 8)) -1);
+        
+      } else if( row == d1Row) {
+        /* End (d1y) is within row.
+         * Draw a line from start to d1y.
+         */
+        m = (1 << ((d1y % 8) +1)) -1;
+        
+      } else if (row < d0Row || row > d1Row) {
+          /* Outside of d0y - d1y. */
           m = 0;
-        }
+          
       } else {
+        /* Inside of d0y - d1y. */
         m = 0xff;
       }
-      
+
+      if( gridX && ((x % gridX) == 0)) {
+        m |= 0b10000000; 
+      }
+        
       lcd.ssd1306WriteRam( m);
-      p = y;
+      prevY = y;
     }
 
     for( ; x <= x1; x++) {
@@ -208,7 +241,7 @@ void TextUILcdSSD1306::drawGrid( uint8_t dataArray[], uint8_t sz, uint8_t x0, ui
 
   if( marker) {
     lcd.setCol( x1);
-    lcd.setRow( sRow);
+    lcd.setRow( startRow);
     lcd.ssd1306WriteRam( 0x0f);
   }
 }
