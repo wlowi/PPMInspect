@@ -26,9 +26,12 @@
 
 #include "ScopeScreen.h"
 
+/* Config */
+extern config_t settings;
+
 /*
  * |012345678901234567891|
- * |1000uOT+ 10.0V 1000u |
+ * |100uO2V T+2.0V D1000u|
  */
 
 #define ROW_COUNT 1
@@ -36,15 +39,16 @@
 #define TRIGGER_MODES 3
 
 const char *triggerModes[TRIGGER_MODES] = {
-    "F", "+", "-"
+    "f", "+", "-"
 };
 
 #define RESOLUTION_STEPS 7
 
+/* Resolution per grid division */
 const char *resolutionSteps[RESOLUTION_STEPS] = {
-    "  10","  20","  50",
-    " 100"," 200"," 500",
-    "1000"
+    "100u","200u","500u",
+    "  1m","  2m","  5m",
+    " 10m"
 };
 
 #define OVERSAMPLING_STEPS 2
@@ -54,6 +58,12 @@ const char *oversamplingSteps[OVERSAMPLING_STEPS] = {
     "O"
 };
 
+#define RANGE_STEPS 2
+
+const char *rangeSteps[RANGE_STEPS] = {
+    "2V",
+    "1V"
+};
 
 ScopeScreen::ScopeScreen(PPM &ppm) : ppmH(ppm)
 {
@@ -63,19 +73,37 @@ ScopeScreen::ScopeScreen(PPM &ppm) : ppmH(ppm)
 void ScopeScreen::update(TextUI *ui)
 {    
     TextUILcd *lcd = ui->getDisplay();
-
+    long scaled;
+    long divisor;
+    
+    /* The array gotten from fetchArray() is not adjusted. It is raw data from ADC.
+     * 15V input is approximately 255.
+     */
     if( ppmH.fetchArray( dataArray, ARRAY_SZ, resToUSec(resolution), oversampling, triggerMode, triggerLevel, triggerDelay * 100)) {
-
+            
+        /* We need to map 15.7V == 255 to 2V == 8 because the grid size in Y direction is 8 pixel
+         * and we want 2V per Y grid division.
+         * 
+         * 2V == 8 -> 15.7V == 62.8 -> 255/62.8 = 4.06
+         */
+        if( range == 0 ) { /* 2V / div */
+          divisor = 406;
+        } else if( range == 1) { /* 1V / div */
+          divisor = 203;
+        }
+         
         for( uint8_t x = 0; x < ARRAY_SZ; x++) {
-             /* Divide by 5 to map range [0,255] to grid of height [10,63] (approximately) */
-            dataArray[x] /= 5;
+            scaled = (long)dataArray[x] * 1000 / (1000 + 4*settings.vppmAdjust);           
+            scaled = scaled * 100 / divisor;
+            dataArray[x] = (scaled > 55) ? 55 : scaled;
         }
 
-        lcd->drawGrid( dataArray, ARRAY_SZ, 0, 10, 127, 63, grid ? 10 : 0, marker);
+        lcd->drawGrid( dataArray, ARRAY_SZ, 0, 8, 127, 63, grid ? 10 : 0, marker);
         marker = !marker;
     }
 }
 
+/* Resolution per pixel */
 uint16_t ScopeScreen::resToUSec( uint8_t res) {
 
   switch (res) {
@@ -152,15 +180,15 @@ void ScopeScreen::getValue(uint8_t row, uint8_t col, Cell *cell)
         if (col == 0) {
             cell->setList(0, resolutionSteps, RESOLUTION_STEPS, resolution);
         } else if( col == 1) {
-            cell->setLabel(4, "u", 1);
+            cell->setList(4, oversamplingSteps, OVERSAMPLING_STEPS, oversampling);
         } else if( col == 2) {
-            cell->setList(5, oversamplingSteps, OVERSAMPLING_STEPS, oversampling);
+            cell->setList(5, rangeSteps, RANGE_STEPS, range);
         } else if( col == 3) {
-            cell->setLabel(6, "T", 1);
+            cell->setLabel(8, "T", 1);
         } else if (col == 4) {
-            cell->setList(7, triggerModes, TRIGGER_MODES, triggerMode);
+            cell->setList(9, triggerModes, TRIGGER_MODES, triggerMode);
         } else if (col == 5) {
-            cell->setFloat1(9, triggerLevel, 4, 1, 200);
+            cell->setFloat1(10, triggerLevel, 3, 1, 99);
         } else if (col == 6) {
             cell->setLabel(13, "V D", 3);
         } else if (col == 7) {
@@ -175,8 +203,10 @@ void ScopeScreen::setValue(uint8_t row, uint8_t col, Cell *cell)
 {
     if( col == 0) {
         resolution = cell->getList();
-    } else if( col == 2) {
+    } else if( col == 1) {
         oversampling = cell->getList();
+    } else if( col == 2) {
+        range = cell->getList();
     } else if( col == 4) {
         triggerMode = cell->getList();
     } else if( col == 5) {

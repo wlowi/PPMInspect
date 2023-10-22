@@ -474,17 +474,15 @@ fixfloat1_t PPM::readVCC() {
     return analogConvert( ADC_VCC, adcValue);
 }
 
-fixfloat1_t PPM::analogConvert( uint8_t convertType, uint16_t v) const {
+fixfloat1_t PPM::analogConvert( uint8_t convertType, uint16_t rawADCvalue) const {
   
-    long vin = v;
+    long vin = rawADCvalue;
 
     if( convertType == ADC_VCC) {
-      vin += settings.vccAdjust;
-    } else {
-      vin += settings.vppmAdjust;
+      vin = vin * 1000 / (1000 + settings.vccAdjust);
+    } else /* ADC_PPM or ADC_VM */ {
+      vin = vin * 1000 / (1000 + settings.vppmAdjust);
     }
-    
-    if( vin < 0) vin = 0;
     
     vin = vin * ADC_VOLTAGE * (ADC_VOLTAGE_DIVIDER_R1 + ADC_VOLTAGE_DIVIDER_R2) / ADC_VOLTAGE_DIVIDER_R2 / ADC_VCC_RESOLUTION;
     adcConvertType = ADC_IDLE;

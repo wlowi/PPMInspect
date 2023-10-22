@@ -45,6 +45,7 @@ private:
     fixfloat1_t triggerLevel = 20; // 2.0V
     uint16_t triggerDelay = 0;
     uint8_t oversampling = 0; // disable oversampling
+    uint8_t range = 0; // Y Range. Default is 2V/div
     boolean grid = true;
     boolean marker = false;
     
