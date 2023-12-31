@@ -31,16 +31,17 @@ extern ChannelScreen channelScreen;
 
 #define ROW_COUNT 9
 
-const char* const DataScreenRowNames[ROW_COUNT] = {
-    "PPM",
-    "Frame",
-    "Pulse",
-    "Pulse",
-    "Level",
-    "Frames",
-    "E: Long frame",
-    "E: Ch. count",
-    "E: Pulse time"};
+const char s1[] PROGMEM = "PPM";
+const char s2[] PROGMEM = "Frame";
+const char s3[] PROGMEM = "Pulse";
+const char s4[] PROGMEM = "Pulse";
+const char s5[] PROGMEM = "Level";
+const char s6[] PROGMEM = "Frames";
+const char s7[] PROGMEM = "E: Long frame";
+const char s8[] PROGMEM = "E: Ch. count";
+const char s9[] PROGMEM = "E: Pulse time";
+
+const char* const DataScreenRowNames[ROW_COUNT] PROGMEM = { s1, s2, s3, s4, s5, s6, s7, s8, s9 };
 
 const uint8_t Columns[ROW_COUNT] = {
     3, 3, 3, 1, 4, 1, 1, 1, 1};
@@ -81,7 +82,7 @@ const char *DataScreen::getHeader()
 
 const char *DataScreen::getMenuName()
 {
-    return "PPM scan";
+    return TextUI::copyToBuffer( (const char*)F("PPM scan"));
 }
 
 uint8_t DataScreen::getRowCount()
@@ -91,7 +92,7 @@ uint8_t DataScreen::getRowCount()
 
 const char *DataScreen::getRowName(uint8_t row)
 {
-    return DataScreenRowNames[row];
+    return TextUI::copyToBuffer( (const char*)pgm_read_ptr( &DataScreenRowNames[row]));
 }
 
 void DataScreen::handleEvent(TextUI *ui, Event *e)

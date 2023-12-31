@@ -128,7 +128,7 @@ const char *ScopeScreen::getHeader()
 
 const char *ScopeScreen::getMenuName()
 {
-    return "MicroScope";
+    return TextUI::copyToBuffer( (const char*)F("MicroScope"));
 }
 
 uint8_t ScopeScreen::getRowCount()
@@ -184,17 +184,17 @@ void ScopeScreen::getValue(uint8_t row, uint8_t col, Cell *cell)
         } else if( col == 2) {
             cell->setList(5, rangeSteps, RANGE_STEPS, range);
         } else if( col == 3) {
-            cell->setLabel(8, "T", 1);
+            cell->setLabel(8, F("T"), 1);
         } else if (col == 4) {
             cell->setList(9, triggerModes, TRIGGER_MODES, triggerMode);
         } else if (col == 5) {
             cell->setFloat1(10, triggerLevel, 3, 1, 99);
         } else if (col == 6) {
-            cell->setLabel(13, "V D", 3);
+            cell->setLabel(13, F("V D"), 3);
         } else if (col == 7) {
             cell->setInt16(16, triggerDelay, 2, 0, 99);
         } else if (col == 8) {
-            cell->setLabel(18, "00u", 3);
+            cell->setLabel(18, F("00u"), 3);
         }
 
 }

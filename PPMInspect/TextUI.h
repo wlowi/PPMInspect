@@ -1304,6 +1304,10 @@ private:
     unsigned long nextTick_msec = 0;
 
 public:
+
+    TextUI();
+    TextUI( uint8_t bufferSize);
+
     /**
      * @brief Set timer interval in milliseconds.
      * 
@@ -1445,6 +1449,26 @@ public:
      * Pops the current screen off the screen stack and activates the previous screen.
      */
     void popScreen();
+
+    /**
+     * @brief Copy PROGMEM string to temporary buffer.
+     * 
+     * Usage Example:
+     * 
+     * const char s1[] PROGMEM = "Peter";
+     * const char s2[] PROGMEM = "Paul";
+     * const char s3[] PROGMEM = "Mary";
+     * 
+     * const char* const Names[ROW_COUNT] PROGMEM = { s1, s2, s3 };
+     * 
+     * TextUI::copyToBuffer( (const char*)pgm_read_ptr( &Names[row]));
+     * 
+     * or
+     * 
+     * TextUI::copyToBuffer( (const char*)F("A fixed String."));
+     * 
+     */
+    static char* copyToBuffer( const char* PROGMEM v);
 };
 
 #endif

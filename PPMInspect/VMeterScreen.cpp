@@ -106,7 +106,7 @@ void VMeterScreen::handleEvent(TextUI *ui, Event *e)
 
 const char *VMeterScreen::getHeader()
 {
-    return "Voltmeter";
+    return TextUI::copyToBuffer( (const char*)F("Voltmeter"));
 }
 
 const char *VMeterScreen::getMenuName()

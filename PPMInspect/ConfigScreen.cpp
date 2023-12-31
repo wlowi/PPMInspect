@@ -36,17 +36,22 @@ extern size_t memdebug[4];
 
 config_t settings;
 
-const char *ConfigRowNames[ROW_COUNT] = {
-    "Pulse min"
-   ,"Pulse max"
-   ,"Servo min"
-   ,"Servo max"
-   ,"Sync  min"
-   ,"Vppm +/-"
-   ,"Vcc  +/-"
-   ,"Low Batt"
+const char s1[] PROGMEM = "Pulse min";
+const char s2[] PROGMEM = "Pulse max";
+const char s3[] PROGMEM = "Servo min";
+const char s4[] PROGMEM = "Servo max";
+const char s5[] PROGMEM = "Sync  min";
+const char s6[] PROGMEM = "Vppm +/-";
+const char s7[] PROGMEM = "Vcc  +/-";
+const char s8[] PROGMEM = "Low Batt";
 #ifdef ENABLE_MEMDEBUG
-   ,"Memfree"
+const char s9[] PROGMEM = "Memfree";
+#endif
+
+const char* const ConfigRowNames[ROW_COUNT] PROGMEM = {
+    s1, s2, s3, s4, s5, s6, s7, s8
+#ifdef ENABLE_MEMDEBUG
+   , s9
 #endif
 };
 
@@ -120,7 +125,7 @@ checksum_t ConfigScreen::rotate(checksum_t v) const
 
 const char *ConfigScreen::getHeader()
 {
-    return "Settings";
+    return TextUI::copyToBuffer( (const char*)F("Settings"));
 }
 
 const char *ConfigScreen::getMenuName()
@@ -145,7 +150,7 @@ uint8_t ConfigScreen::getRowCount()
 
 const char *ConfigScreen::getRowName(uint8_t row)
 {
-    return ConfigRowNames[row];
+    return TextUI::copyToBuffer( (const char*)pgm_read_ptr( &ConfigRowNames[row]));
 }
 
 uint8_t ConfigScreen::getColCount(uint8_t row)

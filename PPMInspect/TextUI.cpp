@@ -26,6 +26,43 @@
 
 #include "TextUI.h"
 
+#define DEFAULT_STRINGBUFFER_LEN 20
+
+static char *stringBuffer = nullptr;
+static uint8_t stringBufferSize = 0;
+
+TextUI::TextUI() {
+
+}
+
+TextUI::TextUI( uint8_t bufferSize) {
+
+    stringBufferSize = bufferSize;
+    stringBuffer = new char[stringBufferSize]; 
+}
+
+/* static */
+char* TextUI::copyToBuffer( const char* PROGMEM v) {
+
+    uint8_t i = 0;
+
+    if( stringBuffer == nullptr) {
+        stringBufferSize = DEFAULT_STRINGBUFFER_LEN;
+        stringBuffer = new char[stringBufferSize];
+    }
+
+    while (i < stringBufferSize && pgm_read_byte( v+i) != 0) {
+        stringBuffer[i] = pgm_read_byte( v+i);
+        i++;
+    }
+
+    if( i == stringBufferSize) i--;
+
+    stringBuffer[i] = '\0';
+
+    return stringBuffer;
+}
+
 void TextUI::setTimer( uiTimer_t t_msec) {
 
   if( t_msec == 0) { // Disable Timer
@@ -56,7 +93,7 @@ void TextUI::setHomeScreen( TextUIScreen *scr) {
   CURRENT_SCREEN = homeScreen = scr;
   refresh = REFRESH_FULL;
 }
-    
+
 Event *TextUI::getEvent() {
 
   unsigned long now = millis();

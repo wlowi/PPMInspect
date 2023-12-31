@@ -76,7 +76,7 @@ size_t memdebug[4];
 #endif
 
 
-TextUI textUI;
+TextUI textUI(15);
 
 extern PPM ppm;
 extern config_t settings;
