@@ -24,26 +24,44 @@
   SOFTWARE.
 */
 
-#include "Config.h"
+#ifndef _PWMScreen_h_
+#define _PWMScreen_h_
 
-#include "HomeScreen.h"
-#include "DataScreen.h"
-#include "PWMScreen.h"
-#include "ScopeScreen.h"
-#include "VMeterScreen.h"
-#include "ConfigScreen.h"
+#include "TextUI.h"
+#include "PPM.h"
 
-extern DataScreen dataScreen;
-extern PWMScreen pwmScreen;
-extern ScopeScreen scopeScreen;
-extern VMeterScreen vMeterScreen;
-extern ConfigScreen configScreen;
 
-HomeScreen::HomeScreen() : TextUIMenu("PPMInspect " PPMINSPECT_VERSION){
+class PWMScreen : public TextUIScreen
+{
+private:
+    PPM &ppmH;
+    pwm_t *currentData = nullptr;
+    bool hasNewData = true;
+    bool keepActivated = false;
 
-    addScreen( &dataScreen);
-    addScreen( &pwmScreen);
-    addScreen( &scopeScreen);
-    addScreen( &vMeterScreen);
-    addScreen( &configScreen);
-}
+public:
+    explicit PWMScreen(PPM &ppm);
+
+    void update();
+
+    /* TextUI */
+    void activate(TextUI *ui);
+    void deactivate(TextUI *ui);
+
+    void handleEvent(TextUI *ui, Event *e);
+    
+    bool hasChanged(uint8_t row, uint8_t col);
+    void endRefresh();
+
+    const char *getHeader();
+    const char *getMenuName();
+
+    uint8_t getRowCount();
+    const char *getRowName(uint8_t row);
+
+    uint8_t getColCount(uint8_t row);
+
+    void getValue(uint8_t row, uint8_t col, Cell *cell);
+};
+
+#endif

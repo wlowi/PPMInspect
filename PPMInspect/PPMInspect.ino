@@ -65,6 +65,7 @@
 
 #include "HomeScreen.h"
 #include "DataScreen.h"
+#include "PWMScreen.h"
 #include "ScopeScreen.h"
 #include "ChannelScreen.h"
 #include "VMeterScreen.h"
@@ -82,6 +83,7 @@ extern PPM ppm;
 extern config_t settings;
 
 DataScreen dataScreen(ppm);
+PWMScreen pwmScreen(ppm);
 ScopeScreen scopeScreen(ppm);
 ChannelScreen channelScreen(ppm);
 VMeterScreen vMeterScreen(ppm);

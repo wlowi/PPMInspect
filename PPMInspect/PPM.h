@@ -50,6 +50,18 @@ typedef struct ppm_t {
     uint16_t channelMax_usec[PPM_MAX_CHANNELS];
 } ppm_t;
 
+typedef struct pwm_t {
+  
+    bool     sync;
+    uint32_t frameMin_usec;
+    uint32_t frameMax_usec;
+    uint16_t pulseL_usec;
+    uint16_t pulseH_usec;
+    fixfloat2_t freq;
+    uint32_t frames;
+    uint32_t miss;
+} pwm_t;
+
 class PPM {
 
     private:
@@ -60,6 +72,7 @@ class PPM {
          * set is exchanged with ppm[0] when the set is complete and consistent.
          */
         ppm_t ppm[3];
+        pwm_t pwm[3];
 
         uint8_t writeSet = 0;
         uint8_t stableSet = 1;
@@ -79,14 +92,20 @@ class PPM {
         fixfloat1_t readADC();
         fixfloat1_t readVCC();
         
-        void startScan();
-        void stopScan();
-    
+        void startPPMScan();
         ppm_t *getPPM();
 
-        /* The following two methods should only get called from ISR */
-        ppm_t *getWriteSet();
-        void switchWriteSet();
+        void startPWMScan();
+        pwm_t *getPWM();
+
+        void stopScan();
+
+        /* The following four methods should only get called from ISR */
+        ppm_t *getPPMWriteSet();
+        void switchPPMWriteSet();
+
+        pwm_t *getPWMWriteSet();
+        void switchPWMWriteSet();
 
         boolean fetchArray( uint8_t dataArray[], uint8_t sz, uint16_t resUsec, uint8_t oversampling, uint8_t triggerMode, fixfloat1_t triggerLevel,  uint16_t triggerDelay);
 };
