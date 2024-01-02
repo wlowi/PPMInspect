@@ -25,6 +25,9 @@
 */
 
 #include "PWMScreen.h"
+#include "ScopeScreen.h"
+
+extern ScopeScreen scopeScreen;
 
 /* Config */
 extern config_t settings;
@@ -44,7 +47,7 @@ const char* const PWMScreenRowNames[ROW_COUNT] PROGMEM = { s1, s2, s3, s4, s5, s
 const uint8_t Columns[ROW_COUNT] = {
     1, 3, 2, 2, 2, 1, 1 };
 
-PWMScreen::PWMScreen(PPM &ppm) : ppmH(ppm)
+PWMScreen::PWMScreen(PPM& ppm) : ppmH(ppm)
 {
     update();
 }
@@ -57,19 +60,20 @@ void PWMScreen::update()
 
 /* TextUI */
 
-void PWMScreen::activate(TextUI *ui)
+void PWMScreen::activate(TextUI* ui)
 {
-    if( keepActivated) {
-      keepActivated = false;
-    } else {
-      ppmH.startPWMScan();
+    if (keepActivated) {
+        keepActivated = false;
+    }
+    else {
+        ppmH.startPWMScan();
     }
 }
 
-void PWMScreen::deactivate(TextUI *ui)
+void PWMScreen::deactivate(TextUI* ui)
 {
-    if( !keepActivated) {
-      ppmH.stopScan();
+    if (!keepActivated) {
+        ppmH.stopScan();
     }
 }
 
@@ -83,49 +87,45 @@ void PWMScreen::endRefresh()
     hasNewData = false;
 }
 
-void PWMScreen::handleEvent(TextUI *ui, Event *e)
+void PWMScreen::handleEvent(TextUI* ui, Event* e)
 {
-    if (e->getType() == EVENT_TYPE_KEY)
-    {
+    if (e->getType() == EVENT_TYPE_KEY) {
 
-        switch (e->getKey())
-        {
-        case KEY_CLEAR:
+        switch (e->getKey()) {
+        case KEY_CLEAR: // long Enter
             ui->popScreen();
             e->markProcessed();
             break;
 
-        case KEY_RESET:
+        case KEY_RESET: // long Up
             ppmH.stopScan();
-            delay( 500);
+            delay(500);
             ppmH.startPWMScan();
             e->markProcessed();
             break;
 
-/*
         case KEY_ENTER:
             keepActivated = true;
-            ui->pushScreen( &channelScreen);
+            scopeScreen.enablePWMMode(true);
+            ui->pushScreen(&scopeScreen);
             e->markProcessed();
             break;
-*/
         }
 
     }
-    else if (e->getType() == EVENT_TYPE_TIMER)
-    {
+    else if (e->getType() == EVENT_TYPE_TIMER) {
         update();
-    } 
+    }
 }
 
-const char *PWMScreen::getHeader()
+const char* PWMScreen::getHeader()
 {
     return nullptr;
 }
 
-const char *PWMScreen::getMenuName()
+const char* PWMScreen::getMenuName()
 {
-    return TextUI::copyToBuffer((const char *)F("PWM scan"));
+    return TextUI::copyToBuffer((const char*)F("PWM scan"));
 }
 
 uint8_t PWMScreen::getRowCount()
@@ -133,9 +133,9 @@ uint8_t PWMScreen::getRowCount()
     return ROW_COUNT;
 }
 
-const char *PWMScreen::getRowName(uint8_t row)
+const char* PWMScreen::getRowName(uint8_t row)
 {
-    return TextUI::copyToBuffer( (const char*)pgm_read_ptr( &PWMScreenRowNames[row]));
+    return TextUI::copyToBuffer((const char*)pgm_read_ptr(&PWMScreenRowNames[row]));
 }
 
 uint8_t PWMScreen::getColCount(uint8_t row)
@@ -143,74 +143,55 @@ uint8_t PWMScreen::getColCount(uint8_t row)
     return Columns[row];
 }
 
-void PWMScreen::getValue(uint8_t row, uint8_t col, Cell *cell)
+void PWMScreen::getValue(uint8_t row, uint8_t col, Cell* cell)
 {
-    if (row == 0)
-    {
-        if (col == 0)
-        {
+    if (row == 0) {
+        if (col == 0) {
             cell->setLabel(5, currentData->sync ? F("SYNC") : F("----"), 4);
         }
     }
-    else if (row == 1)
-    {
-        if (col == 0)
-        {
+    else if (row == 1) {
+        if (col == 0) {
             cell->setInt32(5, currentData->frameMin_usec, 6, 0, 0);
         }
-        else if (col == 1)
-        {
+        else if (col == 1) {
             cell->setInt32(12, currentData->frameMax_usec, 6, 0, 0);
         }
-        else
-        {
+        else {
             cell->setLabel(19, F("us"), 2);
         }
     }
-    else if (row == 2)
-    {
-        if (col == 0)
-        {
-            cell->setInt16(13, currentData->pulseL_usec, 5, 0, 0);
+    else if (row == 2) {
+        if (col == 0) {
+            cell->setInt16(13, currentData->pulseL_usec[currentData->lastUsed], 5, 0, 0);
         }
-        else
-        {
+        else {
             cell->setLabel(19, F("us"), 2);
         }
     }
-    else if (row == 3)
-    {
-        if (col == 0)
-        {
-            cell->setInt16(13, currentData->pulseH_usec, 5, 0, 0);
+    else if (row == 3) {
+        if (col == 0) {
+            cell->setInt16(13, currentData->pulseH_usec[currentData->lastUsed], 5, 0, 0);
         }
-        else
-        {
+        else {
             cell->setLabel(19, F("us"), 2);
         }
     }
-    else if (row == 4)
-    {
-        if (col == 0)
-        {
-            cell->setFloat2( 9, currentData->freq, 9, 0, 0);
+    else if (row == 4) {
+        if (col == 0) {
+            cell->setFloat2(9, currentData->freq, 9, 0, 0);
         }
-        else
-        {
+        else {
             cell->setLabel(19, F("Hz"), 2);
         }
     }
-    else if (row == 5)
-    {
-        if (col == 0)
-        {
+    else if (row == 5) {
+        if (col == 0) {
             cell->setInt32(11, currentData->frames, 10, 0, 0);
         }
     }
-    else if (row == 6)
-    {
-        if (col == 0)
-        {
+    else if (row == 6) {
+        if (col == 0) {
             cell->setInt32(11, currentData->miss, 10, 0, 0);
         }
     }

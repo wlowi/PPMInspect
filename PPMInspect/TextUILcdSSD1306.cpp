@@ -149,6 +149,7 @@ void TextUILcdSSD1306::printChar( char ch) {
  * 
  * dataArray[]  - Data
  * sz           - Size of dataArray
+ * si           - Array start index
  * x0           - Start x/y (0,0 is upper left corner)
  * y0
  * x1           - End x/y
@@ -156,13 +157,13 @@ void TextUILcdSSD1306::printChar( char ch) {
  * gridX        - Grid size in X direction, 0 disables grid
  * marker       - Draw update marker 
  */
-void TextUILcdSSD1306::drawGrid( uint8_t dataArray[], uint8_t sz, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t gridX, boolean marker)
+void TextUILcdSSD1306::drawGrid( uint8_t dataArray[], uint8_t sz, uint8_t si, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t gridX, boolean marker)
 {
   uint8_t m;
   uint8_t y;
   uint8_t prevY;
   uint8_t x;
-  uint8_t i;
+  uint8_t ii;
 
   uint8_t startRow;
   uint8_t endRow;
@@ -180,11 +181,12 @@ void TextUILcdSSD1306::drawGrid( uint8_t dataArray[], uint8_t sz, uint8_t x0, ui
     lcd.setCol( x0);
     lcd.setRow( row);
 
-    i = 0;
-    prevY = y1 - dataArray[i++];
-    
-    for( x = x0; (x <= x1) && (i < sz); x++) {
-      y = y1 - dataArray[i++];
+    prevY = y1 - dataArray[si];
+    ii = 1;
+
+    for( x = x0; (x <= x1) && (ii < sz); x++) {
+      y = y1 - dataArray[(si + ii) % sz];
+      ii++;
 
       /* Compute row and y value of the vertical line to draw.
        * d0 has the lower numeric value.

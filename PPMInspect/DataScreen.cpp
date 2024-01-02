@@ -44,9 +44,9 @@ const char s9[] PROGMEM = "E: Pulse time";
 const char* const DataScreenRowNames[ROW_COUNT] PROGMEM = { s1, s2, s3, s4, s5, s6, s7, s8, s9 };
 
 const uint8_t Columns[ROW_COUNT] = {
-    3, 3, 3, 1, 4, 1, 1, 1, 1};
+    3, 3, 3, 1, 4, 1, 1, 1, 1 };
 
-DataScreen::DataScreen(PPM &ppm) : ppmH(ppm)
+DataScreen::DataScreen(PPM& ppm) : ppmH(ppm)
 {
     update();
 }
@@ -59,30 +59,31 @@ void DataScreen::update()
 
 /* TextUI */
 
-void DataScreen::activate(TextUI *ui)
+void DataScreen::activate(TextUI* ui)
 {
-    if( keepActivated) {
-      keepActivated = false;
-    } else {
-      ppmH.startPPMScan();
+    if (keepActivated) {
+        keepActivated = false;
+    }
+    else {
+        ppmH.startPPMScan();
     }
 }
 
-void DataScreen::deactivate(TextUI *ui)
+void DataScreen::deactivate(TextUI* ui)
 {
-    if( !keepActivated) {
-      ppmH.stopScan();
+    if (!keepActivated) {
+        ppmH.stopScan();
     }
 }
 
-const char *DataScreen::getHeader()
+const char* DataScreen::getHeader()
 {
     return nullptr;
 }
 
-const char *DataScreen::getMenuName()
+const char* DataScreen::getMenuName()
 {
-    return TextUI::copyToBuffer( (const char*)F("PPM scan"));
+    return TextUI::copyToBuffer((const char*)F("PPM scan"));
 }
 
 uint8_t DataScreen::getRowCount()
@@ -90,41 +91,38 @@ uint8_t DataScreen::getRowCount()
     return ROW_COUNT;
 }
 
-const char *DataScreen::getRowName(uint8_t row)
+const char* DataScreen::getRowName(uint8_t row)
 {
-    return TextUI::copyToBuffer( (const char*)pgm_read_ptr( &DataScreenRowNames[row]));
+    return TextUI::copyToBuffer((const char*)pgm_read_ptr(&DataScreenRowNames[row]));
 }
 
-void DataScreen::handleEvent(TextUI *ui, Event *e)
+void DataScreen::handleEvent(TextUI* ui, Event* e)
 {
-    if (e->getType() == EVENT_TYPE_KEY)
-    {
+    if (e->getType() == EVENT_TYPE_KEY) {
 
-        switch (e->getKey())
-        {
-        case KEY_CLEAR:
+        switch (e->getKey()) {
+        case KEY_CLEAR: // long Enter
             ui->popScreen();
             e->markProcessed();
             break;
 
-        case KEY_RESET:
+        case KEY_RESET: // long Up
             ppmH.stopScan();
-            delay( 500);
+            delay(500);
             ppmH.startPPMScan();
             e->markProcessed();
             break;
 
         case KEY_ENTER:
             keepActivated = true;
-            ui->pushScreen( &channelScreen);
+            ui->pushScreen(&channelScreen);
             e->markProcessed();
             break;
         }
     }
-    else if (e->getType() == EVENT_TYPE_TIMER)
-    {
+    else if (e->getType() == EVENT_TYPE_TIMER) {
         update();
-    } 
+    }
 }
 
 uint8_t DataScreen::getColCount(uint8_t row)
@@ -142,110 +140,83 @@ void DataScreen::endRefresh()
     hasNewData = false;
 }
 
-void DataScreen::getValue(uint8_t row, uint8_t col, Cell *cell)
+void DataScreen::getValue(uint8_t row, uint8_t col, Cell* cell)
 {
-    if (row == 0)
-    {
-        if (col == 0)
-        {
+    if (row == 0) {
+        if (col == 0) {
             cell->setLabel(5, currentData->sync ? F("SYNC") : F("----"), 4);
         }
-        else if (col == 1)
-        {
+        else if (col == 1) {
             cell->setInt8(9, currentData->channels, 3, 0, 0);
         }
-        else
-        {
+        else {
             cell->setLabel(13, F("Channels"), 8);
         }
     }
-    else if (row == 1)
-    {
-        if (col == 0)
-        {
+    else if (row == 1) {
+        if (col == 0) {
             cell->setInt16(7, currentData->frameMin_usec, 5, 0, 0);
         }
-        else if (col == 1)
-        {
+        else if (col == 1) {
             cell->setInt16(13, currentData->frameMax_usec, 5, 0, 0);
         }
-        else
-        {
+        else {
             cell->setLabel(19, F("us"), 2);
         }
     }
-    else if (row == 2)
-    {
-        if (col == 0)
-        {
+    else if (row == 2) {
+        if (col == 0) {
             cell->setInt16(7, currentData->pulseMin_usec, 5, 0, 0);
         }
-        else if (col == 1)
-        {
+        else if (col == 1) {
             cell->setInt16(13, currentData->pulseMax_usec, 5, 0, 0);
         }
-        else
-        {
+        else {
             cell->setLabel(19, F("us"), 2);
         }
     }
-    else if (row == 3)
-    {
-        if (col == 0)
-        {
+    else if (row == 3) {
+        if (col == 0) {
             cell->setLabel(8, currentData->pulseLevel ? F("HIGH") : F(" LOW"), 4);
         }
     }
-    else if (row == 4)
-    {
-        if (col == 0)
-        {
+    else if (row == 4) {
+        if (col == 0) {
             cell->setFloat1(7, currentData->vLevel_low, 4, 0, 0);
         }
-        else if (col == 1)
-        {
+        else if (col == 1) {
             cell->setLabel(11, F("V"), 1);
         }
-        else if (col == 2)
-        {
+        else if (col == 2) {
             cell->setFloat1(16, currentData->vLevel_high, 4, 0, 0);
         }
-        else
-        {
+        else {
             cell->setLabel(20, F("V"), 1);
         }
     }
-    else if (row == 5)
-    {
-        if (col == 0)
-        {
+    else if (row == 5) {
+        if (col == 0) {
             cell->setInt32(11, currentData->frames, 10, 0, 0);
         }
     }
-    else if (row == 6)
-    {
-        if (col == 0)
-        {
+    else if (row == 6) {
+        if (col == 0) {
             cell->setInt16(16, currentData->badFrames, 5, 0, 0);
         }
     }
-    else if (row == 7)
-    {
-        if (col == 0)
-        {
+    else if (row == 7) {
+        if (col == 0) {
             cell->setInt16(16, currentData->badCount, 5, 0, 0);
         }
     }
-    else if (row == 8)
-    {
-        if (col == 0)
-        {
+    else if (row == 8) {
+        if (col == 0) {
             cell->setInt16(16, currentData->badPulse, 5, 0, 0);
         }
     }
 }
 
-void DataScreen::setValue(uint8_t row, uint8_t col, Cell *cell)
+void DataScreen::setValue(uint8_t row, uint8_t col, Cell* cell)
 {
     /* noop */
 }

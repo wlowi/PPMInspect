@@ -30,8 +30,11 @@
 #include "TextUI.h"
 #include "PPM.h"
 
-
 #define ARRAY_SZ     ((byte)128)
+
+#define PWMMODE_OFF     0
+#define PWMMODE_SERVO   1
+#define PWMMODE_PCT     2
 
 class ScopeScreen : public TextUIScreen
 {
@@ -46,15 +49,26 @@ private:
     uint8_t range = 0; // Y Range. Default is 2V/div
     boolean grid = true;
     boolean marker = false;
-    
-public:
-    explicit ScopeScreen(PPM &ppm);
 
+    /* This changes display mode from scope to pwm view. */
+    uint8_t pwmMode = PWMMODE_OFF;
+    boolean refresh = true;
+    boolean freeze = false;
+
+public:
+    ScopeScreen(PPM &ppm);
+
+    /* Enable/disable PWM mode */
+    void enablePWMMode( boolean v) { pwmMode = v ? PWMMODE_SERVO : PWMMODE_OFF; };
+
+    void activate(TextUI *ui);
+    void deactivate(TextUI *ui);
     void update(TextUI *ui);
     uint16_t resToUSec( uint8_t res);
 
     /* TextUI */
     void handleEvent(TextUI *ui, Event *e);
+    bool needsRefresh();
 
     const char *getHeader();
     const char *getMenuName();

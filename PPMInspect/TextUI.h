@@ -387,9 +387,20 @@ public:
      */
     virtual void printChar(char ch) = 0;
 
-
-    virtual void drawGrid( uint8_t dataArray[], uint8_t sz, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t grid, boolean marker) = 0;
-
+    /**
+     * @brief Draw data
+     * 
+     * @param dataArray data buffer
+     * @param sz        array size
+     * @param si        array start index (The array is used round robin)
+     * @param x0        start (left)
+     * @param y0        start (top)
+     * @param x1        end (right)
+     * @param y1        end (bottom)
+     * @param grid      grid size ( 0 means off )
+     * @param marker    enable draw marker
+     */
+    virtual void drawGrid( uint8_t dataArray[], uint8_t sz, uint8_t si, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t grid, boolean marker);
 
     /**
      * @brief Print signed integer.

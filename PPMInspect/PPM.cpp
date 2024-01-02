@@ -227,16 +227,23 @@ ISR(TIMER1_CAPT_vect) {
 
         case DETECT_STEP_PWM:
             if( level) {
-                pwmWSet->pulseL_usec = time_usec;
-                if( pwmWSet->pulseH_usec > 0) {
-                    uint32_t fTime = (uint32_t)time_usec + pwmWSet->pulseH_usec;
+                uint16_t H = pwmWSet->pulseH_usec[pwmWSet->lastUsed];
+
+                pwmWSet->pulseL_usec[pwmWSet->lastUsed] = time_usec;
+                
+                if( H > 0) {
+                    uint32_t fTime = (uint32_t)time_usec + H;
                     if( pwmWSet->frameMax_usec == 0L) {
-                        pwmWSet->frameMax_usec = 1L; // skip first 
+                        pwmWSet->frameMax_usec = 1L; // skip first
+                        break;
+
                     } else if( fTime > pwmWSet->frameMax_usec) {
                         pwmWSet->frameMax_usec = fTime;
                     }
                     if( pwmWSet->frameMin_usec == 0L) {
                         pwmWSet->frameMin_usec = UINT32_MAX; // skip first
+                        break;
+
                     } else if ( fTime < pwmWSet->frameMin_usec) {
                         pwmWSet->frameMin_usec = fTime;
                     }
@@ -244,11 +251,13 @@ ISR(TIMER1_CAPT_vect) {
                     pwmWSet->freq = (100000000L / fTime); // 2 digits right of dot
                     pwmWSet->frames++;
                     pwmWSet->sync = true;
+
+                    ppm.switchPWMWriteSet();
                 }
             } else {
-                pwmWSet->pulseH_usec = time_usec;
+                pwmWSet->lastUsed = (pwmWSet->lastUsed + 1) % PWM_HISTORY;
+                pwmWSet->pulseH_usec[pwmWSet->lastUsed] = time_usec;
             }
-            ppm.switchPWMWriteSet();
             break;
         }
     }

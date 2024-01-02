@@ -26,9 +26,9 @@
 
 #include "ChannelScreen.h"
 
-ChannelScreen::ChannelScreen(PPM &ppm) : ppmH(ppm)
+ChannelScreen::ChannelScreen(PPM& ppm) : ppmH(ppm)
 {
-    strcpy( channelName, "C  ");
+    strcpy(channelName, "C  ");
     update();
 }
 
@@ -40,55 +40,53 @@ void ChannelScreen::update()
 
 /* TextUI */
 
-const char *ChannelScreen::getHeader()
+const char* ChannelScreen::getHeader()
 {
     return nullptr;
 }
 
-const char *ChannelScreen::getMenuName()
+const char* ChannelScreen::getMenuName()
 {
     return "Channels";
 }
 
 uint8_t ChannelScreen::getRowCount()
 {
-    return currentData->channels + 1; 
+    return currentData->channels + 1;
 }
 
-const char *ChannelScreen::getRowName(uint8_t row)
+const char* ChannelScreen::getRowName(uint8_t row)
 {
-    if( row == 0) {
+    if (row == 0) {
         return "PPM";
     }
 
-    if( row < 10) {
-      channelName[1] = '0' + row;
-      channelName[2] = ' ';
-    } else {
-      channelName[1] = '1';
-      channelName[2] = '0' + row -10;
+    if (row < 10) {
+        channelName[1] = '0' + row;
+        channelName[2] = ' ';
+    }
+    else {
+        channelName[1] = '1';
+        channelName[2] = '0' + row - 10;
     }
 
     return channelName;
 }
 
-void ChannelScreen::handleEvent(TextUI *ui, Event *e)
+void ChannelScreen::handleEvent(TextUI* ui, Event* e)
 {
-    if (e->getType() == EVENT_TYPE_KEY)
-    {
-        switch (e->getKey())
-        {
-        case KEY_CLEAR:
+    if (e->getType() == EVENT_TYPE_KEY) {
+        switch (e->getKey()) {
+        case KEY_CLEAR: // long Enter
         case KEY_ENTER:
             ui->popScreen();
             e->markProcessed();
             break;
-        } 
+        }
     }
-    else if (e->getType() == EVENT_TYPE_TIMER)
-    {
+    else if (e->getType() == EVENT_TYPE_TIMER) {
         update();
-    } 
+    }
 }
 
 uint8_t ChannelScreen::getColCount(uint8_t row)
@@ -106,31 +104,36 @@ void ChannelScreen::endRefresh()
     hasNewData = false;
 }
 
-void ChannelScreen::getValue(uint8_t row, uint8_t col, Cell *cell)
+void ChannelScreen::getValue(uint8_t row, uint8_t col, Cell* cell)
 {
     if (row == 0) {
 
         if (col == 0) {
             cell->setLabel(5, currentData->sync ? F("SYNC") : F("----"), 4);
-        } else if (col == 1) {
+        }
+        else if (col == 1) {
             cell->setInt8(9, currentData->channels, 3, 0, 0);
-        } else {
+        }
+        else {
             cell->setLabel(13, F("Channels"), 8);
         }
-        
-    } else {
-      
+
+    }
+    else {
+
         if (col == 0) {
-            cell->setInt16(4, currentData->channel_usec[row-1], 5, 0, 0);
-        } else if (col == 1) {
-            cell->setInt16(10, currentData->channelMin_usec[row-1], 5, 0, 0);
-        } else {
-            cell->setInt16(16, currentData->channelMax_usec[row-1], 5, 0, 0);
+            cell->setInt16(4, currentData->channel_usec[row - 1], 5, 0, 0);
+        }
+        else if (col == 1) {
+            cell->setInt16(10, currentData->channelMin_usec[row - 1], 5, 0, 0);
+        }
+        else {
+            cell->setInt16(16, currentData->channelMax_usec[row - 1], 5, 0, 0);
         }
     }
 }
 
-void ChannelScreen::setValue(uint8_t row, uint8_t col, Cell *cell)
+void ChannelScreen::setValue(uint8_t row, uint8_t col, Cell* cell)
 {
     /* noop */
 }

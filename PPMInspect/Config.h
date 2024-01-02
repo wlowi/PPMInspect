@@ -30,7 +30,7 @@
 #include "Arduino.h"
 #include "TextUI.h"
 
-#define PPMINSPECT_VERSION "0.10.1"
+#define PPMINSPECT_VERSION "0.10.2"
 
 #define ENABLE_MEMDEBUG
 
@@ -124,7 +124,7 @@ do {                                          \
 /* Actions for short press */
 #define BUTTON_SHORT_KEYS      KEY_UP,    KEY_ENTER, KEY_DOWN
 /* Actions for long press ( > 300 mSec ) */
-#define BUTTON_LONG_KEYS       KEY_RESET, KEY_CLEAR, KEY_NONE
+#define BUTTON_LONG_KEYS       KEY_RESET, KEY_CLEAR, KEY_FUNCTION
 
 /* ================================================================== */
 

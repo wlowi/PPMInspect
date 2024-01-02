@@ -50,16 +50,20 @@ typedef struct ppm_t {
     uint16_t channelMax_usec[PPM_MAX_CHANNELS];
 } ppm_t;
 
+#define PWM_HISTORY 10
+
 typedef struct pwm_t {
   
     bool     sync;
     uint32_t frameMin_usec;
     uint32_t frameMax_usec;
-    uint16_t pulseL_usec;
-    uint16_t pulseH_usec;
     fixfloat2_t freq;
     uint32_t frames;
     uint32_t miss;
+
+    int8_t   lastUsed;
+    uint16_t pulseL_usec[PWM_HISTORY];
+    uint16_t pulseH_usec[PWM_HISTORY];
 } pwm_t;
 
 class PPM {

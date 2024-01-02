@@ -102,7 +102,20 @@ class TextUILcdSSD1306 : public TextUILcd {
 
     void printChar( char ch);
 
-    void drawGrid( uint8_t dataArray[], uint8_t sz, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t grid, boolean marker);
+    /**
+     * @brief Draw data
+     * 
+     * @param dataArray data buffer
+     * @param sz        array size
+     * @param si        array start index (The array is used round robin)
+     * @param x0        start (left)
+     * @param y0        start (top)
+     * @param x1        end (right)
+     * @param y1        end (bottom)
+     * @param grid      grid size ( 0 means off )
+     * @param marker    enable draw marker
+     */
+    void drawGrid( uint8_t dataArray[], uint8_t sz, uint8_t si, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t grid, boolean marker);
 };
 
 #endif
