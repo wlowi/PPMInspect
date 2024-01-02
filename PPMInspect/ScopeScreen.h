@@ -38,8 +38,6 @@ class ScopeScreen : public TextUIScreen
 private:
     PPM &ppmH;
 
-    uint8_t dataArray[ARRAY_SZ];
-
     uint8_t resolution = 3; // 100 usec
     uint8_t triggerMode = 0; // free running
     fixfloat1_t triggerLevel = 20; // 2.0V

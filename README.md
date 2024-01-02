@@ -5,6 +5,7 @@ Ein Tool zur Analyse von PPM Signalen.
 ## Features
 
 - PPM Decoder bis 16 Kanäle mit Anzeige der Timing Werte für jeden Kanal
+- PWM Decoder
 - Einfaches Voltmeter
 - Oszilloskop mit 1kHz bis 100kHz Samplingrate
 - Trigger (Freilaufend, ansteigende Flanke, abfallende Flanke)
@@ -78,6 +79,7 @@ textUI.setDisplay(new TextUILcdSSD1306( &Adafruit128x64 ));
 
 ## History
 
+0.10.0: PWM Decoder\
 0.9.17: User Interface aktualisiert\
 0.9.16: PPM Erzeugung verbessert\
 0.9.15: Frame Genauigkeit verbessert\

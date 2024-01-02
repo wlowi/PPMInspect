@@ -30,7 +30,7 @@
 #include "Arduino.h"
 #include "TextUI.h"
 
-#define PPMINSPECT_VERSION "0.10.0"
+#define PPMINSPECT_VERSION "0.10.1"
 
 #define ENABLE_MEMDEBUG
 
@@ -92,7 +92,7 @@ do {                                          \
 
 /* PPM */
 
-#define PPM_MAX_CHANNELS           16
+#define PPM_MAX_CHANNELS           12
 #define PPM_MIN_CHANNELS            4
 
 #define PPM_MAX_PULSE              (2*PPM_MAX_CHANNELS +2)

@@ -127,6 +127,7 @@ ISR(TIMER1_CAPT_vect) {
 
     uint8_t h, l;
     uint16_t time_usec;
+    uint16_t diff;
     bool level;
 
     l = ICR1L;
@@ -146,8 +147,22 @@ ISR(TIMER1_CAPT_vect) {
         ppmWSet = ppm.getPPMWriteSet();
         ppm.startADC(ADC_PPM);
     } else {
+        /* Get current timer and compute difference to ICR 
+         * as compensation for next interrupt. (lastCount)
+         */
+        l = TCNT1L;
+        h = TCNT1H;
         TCNT1 = 0;
-        lastCount = 0;
+        
+        diff = (((uint16_t)h << 8) | l);
+        
+        if( diff > lastCount) {
+            diff -= lastCount;
+            lastCount = -diff;
+        } else { // overrun => sync = false
+            lastCount = 0;
+        }
+
         pwmWSet = ppm.getPWMWriteSet();
     }
 

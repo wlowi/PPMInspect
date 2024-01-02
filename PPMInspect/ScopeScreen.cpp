@@ -73,6 +73,8 @@ ScopeScreen::ScopeScreen(PPM &ppm) : ppmH(ppm)
 void ScopeScreen::update(TextUI *ui)
 {    
     TextUILcd *lcd = ui->getDisplay();
+    uint8_t dataArray[ARRAY_SZ];
+
     long scaled;
     long divisor;
     

@@ -133,6 +133,9 @@ public:
 
     /**
      * @brief Set event type to 'Tick Event'.
+     * 
+     * A tick happens every EVENT_TICK_msec.
+     * (Currently 100 msec.)
      */
     void setTickEvent()
     {
