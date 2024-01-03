@@ -101,7 +101,6 @@ ISR(TIMER1_OVF_vect) {
         pwm_t* pwmWSet = ppm.getPWMWriteSet();
 
         pwmWSet->sync = false;
-        pwmWSet->freq = 0;
         pwmWSet->miss++;
 
         pwmWSet->lastUsed = (pwmWSet->lastUsed + 1) % PWM_HISTORY;
@@ -150,8 +149,9 @@ ISR(TIMER1_CAPT_vect) {
     TCCR1B ^= bit(ICES1);
     TIFR1 |= bit(ICF1);
 
-    time_usec = (((uint16_t)h << 8) | l) - lastCount;
-    lastCount = (((uint16_t)h << 8) | l);
+    diff = (((uint16_t)h << 8) | l);
+    time_usec = diff - lastCount;
+    lastCount = diff;
     time_usec >>= 1;  /* Divide by 2 because of 0.5 usec timer resolution */
 
     level = digitalRead(PORT_PPM_IN);
@@ -263,7 +263,6 @@ ISR(TIMER1_CAPT_vect) {
                         pwmWSet->frameMin_usec = fTime;
                     }
 
-                    pwmWSet->freq = (100000000L / fTime); // 2 digits right of dot
                     pwmWSet->frames++;
                     pwmWSet->sync = true;
 
@@ -453,7 +452,10 @@ void PPM::startPPMScan() {
     ATOMIC_BLOCK(ATOMIC_FORCEON) {
 
         pulseIdx = 0;
-        memset(&ppm[0], 0, 3 * sizeof(ppm_t));
+        writeSet = 0;
+        stableSet = 1;
+        exportSet = 2;
+        memset(&ppm[0], 0, PPM_SETS * sizeof(ppm_t));
         detectStep = DETECT_STEP_INIT;
 
         pinMode(PORT_PPM_IN, INPUT);
@@ -494,12 +496,20 @@ ppm_t* PPM::getPPM() {
     uint8_t tmp;
 
     ATOMIC_BLOCK(ATOMIC_FORCEON) {
-        tmp = exportSet;
-        exportSet = stableSet;
-        stableSet = tmp;
+        if( PWM_SETS == 3) {
+            tmp = exportSet;
+            exportSet = stableSet;
+            stableSet = tmp;
+        } else {
+            memcpy(&(ppm[stableSet]), &(ppm[writeSet]), sizeof(ppm_t));
+        }
     }
 
-    return &(ppm[exportSet]);
+    if( PWM_SETS == 3) {
+        return &(ppm[exportSet]);
+    } else {
+        return &(ppm[stableSet]);
+    }
 }
 
 ppm_t* PPM::getPPMWriteSet() {
@@ -509,7 +519,9 @@ ppm_t* PPM::getPPMWriteSet() {
 
 void PPM::switchPPMWriteSet() {
 
-    memcpy(&(ppm[stableSet]), &(ppm[writeSet]), sizeof(ppm_t));
+    if( PPM_SETS == 3) {
+        memcpy(&(ppm[stableSet]), &(ppm[writeSet]), sizeof(ppm_t));
+    }
 }
 
 /********* PWM Scan **********/
@@ -519,7 +531,10 @@ void PPM::startPWMScan() {
     ATOMIC_BLOCK(ATOMIC_FORCEON) {
 
         pulseIdx = 0;
-        memset(&pwm[0], 0, 3 * sizeof(pwm_t));
+        writeSet = 0;
+        stableSet = 1;
+        exportSet = 2;
+        memset(&pwm[0], 0, PWM_SETS * sizeof(pwm_t));
         detectStep = DETECT_STEP_PWM;
 
         pinMode(PORT_PPM_IN, INPUT);
@@ -553,12 +568,20 @@ pwm_t* PPM::getPWM() {
     uint8_t tmp;
 
     ATOMIC_BLOCK(ATOMIC_FORCEON) {
-        tmp = exportSet;
-        exportSet = stableSet;
-        stableSet = tmp;
+        if( PWM_SETS == 3) {
+            tmp = exportSet;
+            exportSet = stableSet;
+            stableSet = tmp;
+        } else {
+            memcpy(&(pwm[stableSet]), &(pwm[writeSet]), sizeof(pwm_t));
+        }
     }
 
-    return &(pwm[exportSet]);
+    if( PWM_SETS == 3) {
+        return &(pwm[exportSet]);
+    } else {
+        return &(pwm[stableSet]);
+    }
 }
 
 pwm_t* PPM::getPWMWriteSet() {
@@ -568,7 +591,9 @@ pwm_t* PPM::getPWMWriteSet() {
 
 void PPM::switchPWMWriteSet() {
 
-    memcpy(&(pwm[stableSet]), &(pwm[writeSet]), sizeof(pwm_t));
+    if( PWM_SETS == 3) {
+        memcpy(&(pwm[stableSet]), &(pwm[writeSet]), sizeof(pwm_t));
+    }
 }
 
 /***************/

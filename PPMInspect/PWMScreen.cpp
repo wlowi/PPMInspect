@@ -198,7 +198,15 @@ void PWMScreen::getValue(uint8_t row, uint8_t col, Cell* cell)
     }
     else if (row == 5) {
         if (col == 0) {
-            cell->setFloat2(9, currentData->freq, 9, 0, 0);
+            fixfloat2_t freq;
+            long H = currentData->pulseH_usec[currentData->lastUsed];
+            long L = currentData->pulseL_usec[currentData->lastUsed];
+            if( H == 0 || L == 0) {
+                freq = 0;
+            } else {
+                freq = 100000000L / (H+L); // 2 digits right of dot
+            }
+            cell->setFloat2(9, freq, 9, 0, 0);
         }
         else {
             cell->setLabel(19, F("Hz"), 2);

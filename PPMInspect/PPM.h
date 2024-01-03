@@ -57,7 +57,6 @@ typedef struct pwm_t {
     bool     sync;
     uint32_t frameMin_usec;
     uint32_t frameMax_usec;
-    fixfloat2_t freq;
     uint32_t frames;
     uint32_t miss;
 
@@ -65,6 +64,9 @@ typedef struct pwm_t {
     uint16_t pulseL_usec[PWM_HISTORY];
     uint16_t pulseH_usec[PWM_HISTORY];
 } pwm_t;
+
+#define PPM_SETS       3
+#define PWM_SETS       3
 
 class PPM {
 
@@ -75,8 +77,8 @@ class PPM {
          * one set is exported to the data viewer while the other
          * set is exchanged with ppm[0] when the set is complete and consistent.
          */
-        ppm_t ppm[3];
-        pwm_t pwm[3];
+        ppm_t ppm[PPM_SETS];
+        pwm_t pwm[PWM_SETS];
 
         uint8_t writeSet = 0;
         uint8_t stableSet = 1;
