@@ -32,20 +32,21 @@ extern ScopeScreen scopeScreen;
 /* Config */
 extern config_t settings;
 
-#define ROW_COUNT 7
+#define ROW_COUNT 8
 
 const char s1[] PROGMEM = "PWM";
 const char s2[] PROGMEM = "Cyc.";
 const char s3[] PROGMEM = "Pulse L";
 const char s4[] PROGMEM = "Pulse H";
-const char s5[] PROGMEM = "Freq.";
-const char s6[] PROGMEM = "Frames";
-const char s7[] PROGMEM = "Miss";
+const char s5[] PROGMEM = "Duty Cyc.";
+const char s6[] PROGMEM = "Freq.";
+const char s7[] PROGMEM = "Frames";
+const char s8[] PROGMEM = "Miss";
 
-const char* const PWMScreenRowNames[ROW_COUNT] PROGMEM = { s1, s2, s3, s4, s5, s6, s7 };
+const char* const PWMScreenRowNames[ROW_COUNT] PROGMEM = { s1, s2, s3, s4, s5, s6, s7, s8 };
 
 const uint8_t Columns[ROW_COUNT] = {
-    1, 3, 2, 2, 2, 1, 1 };
+    1, 3, 2, 2, 2, 2, 1, 1 };
 
 PWMScreen::PWMScreen(PPM& ppm) : ppmH(ppm)
 {
@@ -179,18 +180,36 @@ void PWMScreen::getValue(uint8_t row, uint8_t col, Cell* cell)
     }
     else if (row == 4) {
         if (col == 0) {
+            fixfloat2_t duty;
+            long H = currentData->pulseH_usec[currentData->lastUsed];
+            long L = currentData->pulseL_usec[currentData->lastUsed];
+            if( H == 0 ) {
+                duty = 0;
+            } else if( L == 0 ) {
+                duty = 10000;
+            } else {
+                duty = H * 10000 / (H+L);
+            }
+            cell->setFloat2(12, duty, 6, 0, 0);
+        }
+        else {
+            cell->setLabel(19, F("%"), 1);
+        }
+    }
+    else if (row == 5) {
+        if (col == 0) {
             cell->setFloat2(9, currentData->freq, 9, 0, 0);
         }
         else {
             cell->setLabel(19, F("Hz"), 2);
         }
     }
-    else if (row == 5) {
+    else if (row == 6) {
         if (col == 0) {
             cell->setInt32(11, currentData->frames, 10, 0, 0);
         }
     }
-    else if (row == 6) {
+    else if (row == 7) {
         if (col == 0) {
             cell->setInt32(11, currentData->miss, 10, 0, 0);
         }

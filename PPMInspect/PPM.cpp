@@ -101,7 +101,20 @@ ISR(TIMER1_OVF_vect) {
         pwm_t* pwmWSet = ppm.getPWMWriteSet();
 
         pwmWSet->sync = false;
+        pwmWSet->freq = 0;
         pwmWSet->miss++;
+
+        pwmWSet->lastUsed = (pwmWSet->lastUsed + 1) % PWM_HISTORY;
+        bool level = digitalRead(PORT_PPM_IN);
+
+        if( level) {
+            pwmWSet->pulseL_usec[pwmWSet->lastUsed] = 0;
+            pwmWSet->pulseH_usec[pwmWSet->lastUsed] = 1;
+        }
+        else {
+            pwmWSet->pulseL_usec[pwmWSet->lastUsed] = 1;
+            pwmWSet->pulseH_usec[pwmWSet->lastUsed] = 0;
+        }
 
         ppm.switchPWMWriteSet();
     }
@@ -143,10 +156,7 @@ ISR(TIMER1_CAPT_vect) {
 
     level = digitalRead(PORT_PPM_IN);
 
-    if( detectStep != DETECT_STEP_PWM) {
-        ppmWSet = ppm.getPPMWriteSet();
-        ppm.startADC(ADC_PPM);
-    } else {
+    if( detectStep == DETECT_STEP_PWM) {
         /* Get current timer and compute difference to ICR 
          * as compensation for next interrupt. (lastCount)
          */
@@ -164,6 +174,9 @@ ISR(TIMER1_CAPT_vect) {
         }
 
         pwmWSet = ppm.getPWMWriteSet();
+    } else {
+        ppmWSet = ppm.getPPMWriteSet();
+        ppm.startADC(ADC_PPM);
     }
 
     if (TIFR1 & bit(TOV1)) // timer overflow
@@ -233,18 +246,20 @@ ISR(TIMER1_CAPT_vect) {
                 
                 if( H > 0) {
                     uint32_t fTime = (uint32_t)time_usec + H;
+
                     if( pwmWSet->frameMax_usec == 0L) {
                         pwmWSet->frameMax_usec = 1L; // skip first
                         break;
 
-                    } else if( fTime > pwmWSet->frameMax_usec) {
+                    } else if( fTime > pwmWSet->frameMax_usec || !pwmWSet->sync) {
                         pwmWSet->frameMax_usec = fTime;
                     }
+
                     if( pwmWSet->frameMin_usec == 0L) {
                         pwmWSet->frameMin_usec = UINT32_MAX; // skip first
                         break;
 
-                    } else if ( fTime < pwmWSet->frameMin_usec) {
+                    } else if ( fTime < pwmWSet->frameMin_usec || !pwmWSet->sync) {
                         pwmWSet->frameMin_usec = fTime;
                     }
 
