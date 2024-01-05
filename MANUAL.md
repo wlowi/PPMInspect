@@ -1,7 +1,6 @@
 # PPMInspect
 
-Diese Anleitung beschreibt PPMInspect 0.9.17 (April 2023)\
-Einige Bilder zeigen allerdings noch die Version 0.9.13.
+Diese Anleitung beschreibt PPMInspect 0.10.3 (Januar 2024)
 
 
 ![AtWork](doc/PPMInspect_at_work.JPG "AtWork")
@@ -23,10 +22,91 @@ Taster2:
 
 Taster3:
 - kurz:   DOWN
+- lang:   OPTION
 
 
 Seit Version 0.9.15 wird die Versorgungsspannung überwacht.\
 Fällt die Spannung unter den in den Einstellungen eingestellten Wert, so wird im Display periodisch "Low Bat" angezeigt.
+
+---
+## Funktionstasten übersicht
+
+### PPM Scan
+
+- UP: Vorherige Zeile
+- RESET: Sampling neu starten
+
+- ENTER: Zur Kanalanzeige
+- CLEAR: Zum Hauptmenü
+
+- DOWN: Nächste Zeile
+- OPTION: - 
+
+### PPM Scan Kanalanzeige
+
+- UP: Vorherige Zeile
+- RESET: -
+
+- ENTER: Zum PPM Scan
+- CLEAR: Zum PPM Scan
+
+- DOWN: Nächste Zeile
+- OPTION: -
+
+### PWM Scan
+
+- UP: Vorherige Zeile
+- RESET: Sampling neu starten
+
+- ENTER: Zur grafischen PWM Anzeige
+- CLEAR: Zum Hauptmenü
+
+- DOWN: Nächste Zeile
+- OPTION: -
+
+### Grafische PWM Anzeige
+
+- UP: Zum PWM Scan
+- RESET: Wechsel "Servo" / "%" Modus
+
+- ENTER: -
+- CLEAR: Zum PWM Scan
+
+- DOWN: Anzeige einfrieren
+- OPTION: Gitter aus/ein
+
+### MicroScope
+
+- UP: Zum Hauptmenü
+- RESET: -
+
+- ENTER: MicroScope Einstellungen
+- CLEAR: Zum Hauptmenü
+
+- DOWN: Anzeige einfrieren
+- OPTION:  Gitter aus/ein
+
+### Voltmeter
+
+- UP: Zum Hauptmenü
+- RESET: Minimum/Maximum zurücksetzen
+
+- ENTER: Zum Hauptmenü
+- CLEAR: Zum Hauptmenü
+
+- DOWN: Minimum/Maximum Ein/Aus
+- OPTION: -
+
+### Settings
+
+- UP: Vorherige Zeile
+- RESET: -
+
+- ENTER: Einstellung ändern
+- CLEAR: -
+
+- DOWN: Nächste Zeile
+- OPTION: -
 
 ---
 ## Funktionen
@@ -48,7 +128,8 @@ Der PPM Scanner synchronisiert sich auf ein PPM Signal und zeigt die Signal Para
 
 ![SCAN](doc/PPMInspect_scan.JPG "Scan")
 
-Mit CLEAR (langer Druck auf die ENTER Taste) wird in das Hauptmenu zurück gesprungen.\
+Mit CLEAR (langer Druck auf die ENTER Taste) wird in das Hauptmenu zurück gesprungen.
+
 Mit RESET (langer Druck auf die UP Taste) werden alle Werte zurück gesetzt und neu synchronisiert.\
 Mit der DOWN Taste kann nach unten gescrollt und weitere Parameter angezeigt werden.
 
@@ -65,6 +146,35 @@ Ein weiterer Druck auf ENTER wechselt zurück in die Scan Anzeige.
 ![SCAN](doc/PPMInspect_ch.JPG "Scan")
 
 ---
+## PWM Scan
+
+Der PWM Scanner zeigt die Eigenschaften einen PWM Signals an.
+
+- Cyc.: Zykluszeit (H Puls + L Puls) in Microsekunden. Minimum und Maximum. 
+- Pulse L: Zeit des letzten L Pulses.
+- Pulse H: Zeit des letzten H Pulses.
+- Duty Cyc.: Duty cycle. Prozentsatz des H Pulses an der Gesamtzeit.
+- Freq.: Aktuelle PWM Frequenz
+- Frames: Anzahl gescannter Frames
+- Miss: Timer Überlauf. Kein Puls für 32 Millisekunden.
+
+![PWMSCAN](doc/PPMInspect_PWMscan.JPG "PWM Scan")
+
+Mit CLEAR (langer Druck auf die ENTER Taste) wird in das Hauptmenu zurück gesprungen.
+
+Mit RESET (langer Druck auf die UP Taste) werden alle Werte zurück gesetzt und neu synchronisiert.
+
+ENTER schaltet zu grafischen Anzeige um.
+
+"PWM Servo" zeigt den Zeitwert des HIGH Pulses an. Der Wertebereich ist 900 - 2100 Microsekunden.
+
+![PWMSCAN](doc/PPMInspect_PWMscan1.JPG "PWM Scan")
+
+"PWM %" zeigt den Prozentsatz des H Pulses an der Gesamtzeit an.
+
+![PWMSCAN](doc/PPMInspect_PWMscan2.JPG "PWM Scan")
+
+---
 ## MicroScope
 
 Ein einfaches Oszillosop. (ACHTUNG: Nur positive Spannungen)
@@ -74,7 +184,8 @@ Folgende Werte können durch Drücken der UP / DOWN Tasten verstellt werden.
 
 - Samplingrate: Einstellbar zwischen 10 und 1000 Microsekunden (Entspricht 1 KHz bis 100 kHz)
 - Oversampling: Siehe Oversampling
-- Triggermode: Einstellbar auf "F" freilaufend, "+" ansteigende Flanke, "-" abfallende Flanke
+- Y Auflösung: 2V pro Einheit oder 1V pro Einheit.
+- Triggermode: Einstellbar auf "f" freilaufend, "+" ansteigende Flanke, "-" abfallende Flanke
 - Triggerlevel: in Volt
 - Triggerverzögerung: Einstellbar zwischen 0 und 9900 Microsekunden. \
   Ein Trigger wird nur ausgelöst, wenn über diesen Zeitraum vorher kein weiterer Trigger gefunden wurde. \
@@ -83,7 +194,7 @@ Folgende Werte können durch Drücken der UP / DOWN Tasten verstellt werden.
 
 Mit UP oder CLEAR (langer Druck auf die ENTER Taste) wechselt man zurück in das Hauptmenü.
 
-![MicroScope1](doc/PPMInspect_scope_200u.JPG "MicroScope1")
+![MicroScope1](doc/PPMInspect_scope.JPG "MicroScope1")
 
 Mit jedem neuen Datensatz wird der "Update" Marker ein/aus geschaltet.  
 Das passiert im freilaufenden Modus und immer wenn ein Trigger anspricht.
@@ -105,7 +216,9 @@ Oversampling is von der eingestellten Samplingrate abhängig.
 
 ![Overscan](doc/PPMInspect_scope_overscan.JPG "Overscan")
 
-Ein Druck auf die DOWN Taste schaltet das Gitter ein und aus.\
+Ein kurzer Druck auf die DOWN Taste friert die Anzeige ein. 
+
+Ein langer Druck auf die DOWN Taste (OPTION) schaltet das Gitter ein und aus.\
 Abstand der vertikalen Gitterlinien: 10 Samples.
 
 ![NoGrid](doc/PPMInspect_scope_nogrid.JPG "NoGrid")

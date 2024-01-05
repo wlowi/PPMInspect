@@ -46,12 +46,12 @@ extern config_t settings;
 /* Detect PWM only */
 #define DETECT_STEP_PWM          5
 
-uint8_t detectStep;
-uint8_t channels;
-uint8_t detectedChannels;
-uint8_t pulseIdx;
-uint16_t pulse_usec[PPM_MAX_PULSE];
-uint16_t lastCount;
+volatile uint8_t detectStep;
+volatile uint8_t channels;
+volatile uint8_t detectedChannels;
+volatile uint8_t pulseIdx;
+volatile uint16_t pulse_usec[PPM_MAX_PULSE];
+volatile uint16_t lastCount;
 
 #define ADC_IDLE  0
 /* ADC started from PPM scan ISR */
@@ -157,6 +157,7 @@ ISR(TIMER1_CAPT_vect) {
     level = digitalRead(PORT_PPM_IN);
 
     if( detectStep == DETECT_STEP_PWM) {
+
         /* Get current timer and compute difference to ICR 
          * as compensation for next interrupt. (lastCount)
          */
@@ -174,105 +175,102 @@ ISR(TIMER1_CAPT_vect) {
         }
 
         pwmWSet = ppm.getPWMWriteSet();
+
+        if( level) {
+            uint16_t H = pwmWSet->pulseH_usec[pwmWSet->lastUsed];
+
+            pwmWSet->pulseL_usec[pwmWSet->lastUsed] = time_usec;
+                
+            if( H > 0) {
+                uint32_t fTime = (uint32_t)time_usec + H;
+
+                if( pwmWSet->frameMax_usec == 0L) {
+                    pwmWSet->frameMax_usec = 1L; // skip first
+                    return;
+
+                } else if( fTime > pwmWSet->frameMax_usec || !pwmWSet->sync) {
+                    pwmWSet->frameMax_usec = fTime;
+                }
+
+                if( pwmWSet->frameMin_usec == 0L) {
+                    pwmWSet->frameMin_usec = UINT32_MAX; // skip first
+                    return;
+
+                } else if ( fTime < pwmWSet->frameMin_usec || !pwmWSet->sync) {
+                    pwmWSet->frameMin_usec = fTime;
+                }
+
+                pwmWSet->frames++;
+                pwmWSet->sync = true;
+                ppm.switchPWMWriteSet();
+            }
+        } else {
+            pwmWSet->lastUsed = (pwmWSet->lastUsed + 1) % PWM_HISTORY;
+            pwmWSet->pulseH_usec[pwmWSet->lastUsed] = time_usec;
+        }
+
     } else {
+
         ppmWSet = ppm.getPPMWriteSet();
         ppm.startADC(ADC_PPM);
-    }
-
-    if (TIFR1 & bit(TOV1)) // timer overflow
-    {
-        /* This should actually never happen as we have overflow interrupt enabled */
-        TIFR1 |= bit(TOV1); /* clear overflow bit */
-        if( detectStep != DETECT_STEP_PWM) {
-            detectStep = DETECT_STEP_INIT;
+    
+        if (TIFR1 & bit(TOV1)) // timer overflow
+        {
+            /* This should actually never happen as we have overflow interrupt enabled */
+            TIFR1 |= bit(TOV1); /* clear overflow bit */
+            if( detectStep != DETECT_STEP_PWM) {
+                detectStep = DETECT_STEP_INIT;
+            }
         }
-    }
-    else {
-        switch (detectStep) {
-        case DETECT_STEP_INIT:
-            TCNT1 = 0;
-            lastCount = 0;
+        else {
 
-            pulseIdx = 0;
-            ppmWSet->channels = 0;
-            ppmWSet->sync = false;
-            ppm.switchPPMWriteSet();
-            detectStep = DETECT_STEP_SYNCWAIT;
-            break;
-
-        case DETECT_STEP_SYNCWAIT:
-            if (time_usec > settings.syncValidMin_usec) {
+            switch (detectStep) {
+            case DETECT_STEP_INIT:
                 TCNT1 = 0;
                 lastCount = 0;
 
-                ppmWSet->pulseLevel = level;
-                channels = 0;
-                detectedChannels = 0;
-                detectStep = DETECT_STEP_CHANNELWAIT;
-            }
-            break;
+                pulseIdx = 0;
+                ppmWSet->channels = 0;
+                ppmWSet->sync = false;
+                ppm.switchPPMWriteSet();
+                detectStep = DETECT_STEP_SYNCWAIT;
+                break;
 
-        case DETECT_STEP_CHANNELWAIT:
-            ppm.countChannels(ppmWSet, time_usec, level);
-            break;
+            case DETECT_STEP_SYNCWAIT:
+                if (time_usec > settings.syncValidMin_usec) {
+                    TCNT1 = 0;
+                    lastCount = 0;
 
-        case DETECT_STEP_VERIFY:
-        case DETECT_STEP_SYNCED:
-            if (ppm.storeFrame(ppmWSet, time_usec, level)) {
-
-                /* We don't set the timer back to 0.
-                 * Instead we get the current timer and compute the offset time
-                 * used by the ISR by subtracting the counter stored in lastCount.
-                 * This is the corrected new timer base.
-                 */
-                l = TCNT1L;
-                h = TCNT1H;
-                time_usec = (((uint16_t)h << 8) | l) - lastCount + 2;
-
-                TCNT1 = time_usec;
-
-                lastCount = 0;
-            }
-
-            break;
-
-        /********** PWM scan ***********/
-
-        case DETECT_STEP_PWM:
-            if( level) {
-                uint16_t H = pwmWSet->pulseH_usec[pwmWSet->lastUsed];
-
-                pwmWSet->pulseL_usec[pwmWSet->lastUsed] = time_usec;
-                
-                if( H > 0) {
-                    uint32_t fTime = (uint32_t)time_usec + H;
-
-                    if( pwmWSet->frameMax_usec == 0L) {
-                        pwmWSet->frameMax_usec = 1L; // skip first
-                        break;
-
-                    } else if( fTime > pwmWSet->frameMax_usec || !pwmWSet->sync) {
-                        pwmWSet->frameMax_usec = fTime;
-                    }
-
-                    if( pwmWSet->frameMin_usec == 0L) {
-                        pwmWSet->frameMin_usec = UINT32_MAX; // skip first
-                        break;
-
-                    } else if ( fTime < pwmWSet->frameMin_usec || !pwmWSet->sync) {
-                        pwmWSet->frameMin_usec = fTime;
-                    }
-
-                    pwmWSet->frames++;
-                    pwmWSet->sync = true;
-
-                    ppm.switchPWMWriteSet();
+                    ppmWSet->pulseLevel = level;
+                    channels = 0;
+                    detectedChannels = 0;
+                    detectStep = DETECT_STEP_CHANNELWAIT;
                 }
-            } else {
-                pwmWSet->lastUsed = (pwmWSet->lastUsed + 1) % PWM_HISTORY;
-                pwmWSet->pulseH_usec[pwmWSet->lastUsed] = time_usec;
+                break;
+
+            case DETECT_STEP_CHANNELWAIT:
+                ppm.countChannels(ppmWSet, time_usec, level);
+                break;
+
+            case DETECT_STEP_VERIFY:
+            case DETECT_STEP_SYNCED:
+                if (ppm.storeFrame(ppmWSet, time_usec, level)) {
+
+                    /* We don't set the timer back to 0.
+                     * Instead we get the current timer and compute the offset time
+                     * used by the ISR by subtracting the counter stored in lastCount.
+                     * This is the corrected new timer base.
+                     */
+                    l = TCNT1L;
+                    h = TCNT1H;
+                    time_usec = (((uint16_t)h << 8) | l) - lastCount + 2;
+
+                    TCNT1 = time_usec;
+
+                    lastCount = 0;
+                }
+                break;
             }
-            break;
         }
     }
 }
